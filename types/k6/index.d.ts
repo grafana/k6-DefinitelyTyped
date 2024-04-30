@@ -33,6 +33,7 @@ import "./experimental/fs";
 import "./experimental/redis";
 import "./experimental/timers";
 import "./experimental/tracing";
+import "./experimental/streams";
 import "./experimental/webcrypto";
 import "./experimental/websockets";
 import "./experimental/grpc";
