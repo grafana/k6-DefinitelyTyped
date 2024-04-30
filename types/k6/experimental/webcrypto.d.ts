@@ -114,7 +114,7 @@ export interface SubtleCrypto {
         algorithm: AesKeyGenParams | HmacKeyGenParams | EcKeyGenParams,
         extractable: boolean,
         keyUsages: Array<"encrypt" | "decrypt" | "sign" | "verify" | "deriveKey" | "deriveBits">,
-    ): Promise<CryptoKey> | Promise<CryptoKeyPair>;
+    ): Promise<CryptoKey | CryptoKeyPair>;
 
     /**
      * The `importKey()` method imports a key into a `CryptoKey` object.
