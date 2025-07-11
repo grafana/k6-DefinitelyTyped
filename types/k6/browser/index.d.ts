@@ -1966,6 +1966,12 @@ export interface Keyboard {
  */
 export interface Locator {
     /**
+     * Returns an array of locators when multiple elements match the selector.
+     * @returns Array of Locator matching the selector.
+     */
+    all(): Promise<Locator[]>
+
+    /**
      * Clears text boxes and input fields of any existing values.
      *
      * **Usage**
@@ -1997,6 +2003,12 @@ export interface Locator {
      * @param options Options to use.
      */
     check(options?: ElementClickOptions): Promise<void>;
+
+    /**
+     * Returns the number of elements matching the selector.
+     * @returns Number of elements matching the selector.
+     */
+    count(): Promise<number>
 
     /**
      * Use this method to unselect an `input type="checkbox"`.
@@ -2052,6 +2064,12 @@ export interface Locator {
     fill(value: string, options?: ElementHandleOptions): Promise<void>;
 
     /**
+     * Returns a locator to the first matching element.
+     * @returns First element Locator associated with the selector.
+     */
+    first(): Locator;
+
+    /**
      * Focuses the element using locator's selector.
      * @param options Options to use.
      */
@@ -2078,6 +2096,19 @@ export interface Locator {
      * @returns Element's innerText.
      */
     innerText(options?: TimeoutOptions): Promise<string>;
+
+    /**
+     * Returns a locator to the last matching element.
+     * @returns Last element Locator associated with the selector.
+     */
+    last(): Locator;
+
+    /**
+     * Returns a locator to the last matching element.
+     * The method is zero-based; for example, nth(0) selects the first element.
+     * @returns N-th element Locator associated with the selector.
+     */
+    nth(): Locator;
 
     /**
      * Returns the `element.textContent`.
