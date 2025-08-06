@@ -1155,6 +1155,9 @@ async function test() {
     // $ExpectType Promise<void>
     locator.fill("text", { timeout: 10000 });
 
+    // $ExpectType Locator
+    locator.first();
+
     // $ExpectType Promise<void>
     locator.focus();
     // $ExpectType Promise<void>
@@ -1176,6 +1179,16 @@ async function test() {
     locator.innerText();
     // $ExpectType Promise<string>
     locator.innerText({ timeout: 10000 });
+
+    // $ExpectType Locator
+    locator.last();
+
+    // $ExpectType Locator
+    locator.nth(0);
+    // @ts-expect-error
+    locator.nth();
+    // @ts-expect-error
+    locator.nth("0");
 
     // $ExpectType Promise<string | null>
     locator.textContent();
