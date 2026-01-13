@@ -80,4 +80,45 @@ declare global {
          */
         resolve(specifier: string): string;
     }
+
+    // === Console ===
+    // ---------------
+
+    /**
+     * k6 console for logging messages during test execution.
+     * https://grafana.com/docs/k6/latest/javascript-api/console/
+     */
+    interface Console {
+        /**
+         * Logs a message to the console.
+         *
+         * Supports Deno-style formatted output for ArrayBuffer and TypedArray objects.
+         * TypedArray values display as `TypeName(length) [ elements ]`.
+         * ArrayBuffer values display as `ArrayBuffer { [Uint8Contents]: <hex>, byteLength: N }`.
+         *
+         * @example
+         * ```js
+         * // Log basic values
+         * console.log('Hello, k6!');
+         * console.log({ status: 200, body: 'OK' });
+         *
+         * // Log TypedArray - displays type, length, and elements
+         * console.log(new Uint8Array([1, 2, 3]));
+         * // Output: Uint8Array(3) [ 1, 2, 3 ]
+         *
+         * // Log ArrayBuffer - displays hex contents and byte length
+         * console.log(new ArrayBuffer(4));
+         * // Output: ArrayBuffer { [Uint8Contents]: <00 00 00 00>, byteLength: 4 }
+         * ```
+         *
+         * @param args Values to log.
+         */
+        log(...args: unknown[]): void;
+    }
+
+    /**
+     * k6 console object for logging messages during test execution.
+     * https://grafana.com/docs/k6/latest/javascript-api/console/
+     */
+    var console: Console;
 }
