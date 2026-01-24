@@ -671,6 +671,38 @@ async function test() {
     });
 
     // $ExpectType void
+    page.on("requestfailed", request => {
+        // $ExpectType Promise<Record<string, string>>
+        request.allHeaders();
+        // $ExpectType Frame
+        request.frame();
+        // $ExpectType Record<string, string>
+        request.headers();
+        // $ExpectType Promise<{ name: string; value: string; }[]>
+        request.headersArray();
+        // $ExpectType Promise<string | null>
+        request.headerValue("content-type");
+        // $ExpectType boolean
+        request.isNavigationRequest();
+        // $ExpectType string
+        request.method();
+        // $ExpectType string | null
+        request.postData();
+        // $ExpectType ArrayBuffer | null
+        request.postDataBuffer();
+        // $ExpectType ResourceType
+        request.resourceType();
+        // $ExpectType Promise<Response | null>
+        request.response();
+        // $ExpectType Promise<{ body: number; headers: number; }>
+        request.size();
+        // $ExpectType ResourceTiming
+        request.timing();
+        // $ExpectType RequestFailure | null
+        request.failure();
+    });
+  
+  // $ExpectType void
     page.on("requestfinished", request => {
         // $ExpectType Promise<Record<string, string>>
         request.allHeaders();
