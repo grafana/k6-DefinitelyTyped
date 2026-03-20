@@ -130,9 +130,9 @@ export interface File {
     mimeType: string;
 
     /**
-     * File content
+     * Base64-encoded file content
      */
-    buffer: ArrayBuffer;
+    buffer: string;
 }
 
 export type ElementHandleOptions = {
