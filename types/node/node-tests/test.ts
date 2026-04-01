@@ -6,6 +6,7 @@ import {
     before,
     beforeEach,
     describe,
+    expectFailure,
     it,
     Mock,
     mock,
@@ -20,6 +21,7 @@ import {
     todo,
 } from "node:test";
 import { dot, junit, lcov, spec, tap, TestEvent } from "node:test/reporters";
+import { URL } from "node:url";
 
 // top-level export
 test satisfies typeof import("node:test");
@@ -164,6 +166,10 @@ test(undefined, undefined, t => {
     t.signal;
     // $ExpectType MockTracker
     t.mock;
+    // $ExpectType boolean
+    t.passed;
+    // $ExpectType Error | null
+    t.error;
     // $ExpectType number
     t.attempt;
 });
@@ -217,6 +223,7 @@ describe("options with values", {
     skip: "reason for skip",
     timeout: Infinity,
     todo: "reason for todo",
+    expectFailure: true,
 });
 
 it("options with values", {
@@ -226,6 +233,7 @@ it("options with values", {
     skip: "reason for skip",
     timeout: Infinity,
     todo: "reason for todo",
+    expectFailure: true,
 });
 
 describe("options with booleans", {
@@ -336,10 +344,45 @@ it.only("only shorthand", {
     timeout: Infinity,
 });
 
+expectFailure("x", {
+    concurrency: 1,
+    only: true,
+    signal: new AbortController().signal,
+    timeout: Infinity,
+});
+expectFailure((t, cb) => {
+    // $ExpectType TestContext
+    t;
+    // $ExpectType (result?: any) => void
+    cb;
+    // $ExpectType void
+    cb({ x: "anything" });
+});
+test.expectFailure("x", {
+    concurrency: 1,
+    only: true,
+    signal: new AbortController().signal,
+    timeout: Infinity,
+});
+describe.expectFailure("x", {
+    concurrency: 1,
+    only: true,
+    signal: new AbortController().signal,
+    timeout: Infinity,
+});
+it.expectFailure("x", {
+    concurrency: 1,
+    only: true,
+    signal: new AbortController().signal,
+    timeout: Infinity,
+});
+
 // Test with suite context
 describe(s => {
     // $ExpectType SuiteContext
     s;
+    // $ExpectType string
+    s.fullName;
     // $ExpectType string
     s.name;
     // $ExpectType string | undefined
@@ -795,6 +838,7 @@ test("mocks a setter", (t) => {
 });
 
 test("mocks a module", (t) => {
+    // module specifier as a string
     // $ExpectType MockModuleContext
     const mock = t.mock.module("node:readline", {
         namedExports: {
@@ -811,6 +855,16 @@ test("mocks a module", (t) => {
     });
     // $ExpectType void
     mock.restore();
+
+    // module specifier as a URL
+    // $ExpectType MockModuleContext
+    t.mock.module(new URL("someUrl"), {
+        namedExports: {
+            fn() {
+                return 42;
+            },
+        },
+    });
 });
 
 test("mocks a property", (t) => {

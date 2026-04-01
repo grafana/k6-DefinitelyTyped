@@ -82,6 +82,7 @@ declare module "node:test" {
     import { AssertMethodNames } from "node:assert";
     import { Readable, ReadableEventMap } from "node:stream";
     import { TestEvent } from "node:test/reporters";
+    import { URL } from "node:url";
     import TestFn = test.TestFn;
     import TestOptions = test.TestOptions;
     /**
@@ -190,6 +191,11 @@ declare module "node:test" {
             function only(name?: string, fn?: SuiteFn): Promise<void>;
             function only(options?: TestOptions, fn?: SuiteFn): Promise<void>;
             function only(fn?: SuiteFn): Promise<void>;
+            // added in v25.5.0, undocumented
+            function expectFailure(name?: string, options?: TestOptions, fn?: SuiteFn): Promise<void>;
+            function expectFailure(name?: string, fn?: SuiteFn): Promise<void>;
+            function expectFailure(options?: TestOptions, fn?: SuiteFn): Promise<void>;
+            function expectFailure(fn?: SuiteFn): Promise<void>;
         }
         /**
          * Shorthand for skipping a test. This is the same as calling {@link test} with `options.skip` set to `true`.
@@ -215,6 +221,11 @@ declare module "node:test" {
         function only(name?: string, fn?: TestFn): Promise<void>;
         function only(options?: TestOptions, fn?: TestFn): Promise<void>;
         function only(fn?: TestFn): Promise<void>;
+        // added in v25.5.0, undocumented
+        function expectFailure(name?: string, options?: TestOptions, fn?: TestFn): Promise<void>;
+        function expectFailure(name?: string, fn?: TestFn): Promise<void>;
+        function expectFailure(options?: TestOptions, fn?: TestFn): Promise<void>;
+        function expectFailure(fn?: TestFn): Promise<void>;
         /**
          * The type of a function passed to {@link test}. The first argument to this function is a {@link TestContext} object.
          * If the test uses callbacks, the callback function is passed as the second argument.
@@ -236,7 +247,7 @@ declare module "node:test" {
         }
         interface RunOptions {
             /**
-             * If a number is provided, then that many test processes would run in parallel, where each process corresponds to one test file.
+             * If a number is provided, then that many tests would run asynchronously (they are still managed by the single-threaded event loop).
              * If `true`, it would run `os.availableParallelism() - 1` test files in parallel. If `false`, it would only run one test file at a time.
              * @default false
              */
@@ -479,7 +490,7 @@ declare module "node:test" {
         }
         namespace EventData {
             interface Error extends globalThis.Error {
-                cause: globalThis.Error;
+                cause: unknown;
             }
             interface LocationInfo {
                 /**
@@ -968,7 +979,6 @@ declare module "node:test" {
              * @since v22.2.0, v20.15.0
              */
             readonly assert: TestContextAssert;
-            readonly attempt: number;
             /**
              * This function is used to create a hook running before subtest of the current test.
              * @param fn The hook function. The first argument to this function is a `TestContext` object.
@@ -1031,6 +1041,21 @@ declare module "node:test" {
              * @since v18.8.0, v16.18.0
              */
             readonly name: string;
+            /**
+             * Indicated whether the test succeeded.
+             * @since v21.7.0, v20.12.0
+             */
+            readonly passed: boolean;
+            /**
+             * The failure reason for the test/case; wrapped and available via `context.error.cause`.
+             * @since v21.7.0, v20.12.0
+             */
+            readonly error: EventData.Error | null;
+            /**
+             * Number of times the test has been attempted.
+             * @since v21.7.0, v20.12.0
+             */
+            readonly attempt: number;
             /**
              * This function is used to set the number of assertions and subtests that are expected to run
              * within the test. If the number of assertions and subtests that run does not match the
@@ -1286,6 +1311,11 @@ declare module "node:test" {
              */
             readonly filePath: string | undefined;
             /**
+             * The name of the suite and each of its ancestors, separated by `>`.
+             * @since v22.3.0, v20.16.0
+             */
+            readonly fullName: string;
+            /**
              * The name of the suite.
              * @since v18.8.0, v16.18.0
              */
@@ -1344,6 +1374,8 @@ declare module "node:test" {
              * @since v22.2.0
              */
             plan?: number | undefined;
+            // added in v25.5.0, undocumented
+            expectFailure?: boolean | undefined;
         }
         /**
          * This function creates a hook that runs before executing a suite.
@@ -1352,7 +1384,7 @@ declare module "node:test" {
          * describe('tests', async () => {
          *   before(() => console.log('about to run some test'));
          *   it('is a subtest', () => {
-         *     assert.ok('some relevant assertion here');
+         *     // Some relevant assertion here
          *   });
          * });
          * ```
@@ -1368,7 +1400,7 @@ declare module "node:test" {
          * describe('tests', async () => {
          *   after(() => console.log('finished running tests'));
          *   it('is a subtest', () => {
-         *     assert.ok('some relevant assertion here');
+         *     // Some relevant assertion here
          *   });
          * });
          * ```
@@ -1384,7 +1416,7 @@ declare module "node:test" {
          * describe('tests', async () => {
          *   beforeEach(() => console.log('about to run a test'));
          *   it('is a subtest', () => {
-         *     assert.ok('some relevant assertion here');
+         *     // Some relevant assertion here
          *   });
          * });
          * ```
@@ -1401,7 +1433,7 @@ declare module "node:test" {
          * describe('tests', async () => {
          *   afterEach(() => console.log('finished running a test'));
          *   it('is a subtest', () => {
-         *     assert.ok('some relevant assertion here');
+         *     // Some relevant assertion here
          *   });
          * });
          * ```
@@ -1692,7 +1724,7 @@ declare module "node:test" {
              * @param specifier A string identifying the module to mock.
              * @param options Optional configuration options for the mock module.
              */
-            module(specifier: string, options?: MockModuleOptions): MockModuleContext;
+            module(specifier: string | URL, options?: MockModuleOptions): MockModuleContext;
             /**
              * Creates a mock for a property value on an object. This allows you to track and control access to a specific property,
              * including how many times it is read (getter) or written (setter), and to restore the original value after mocking.
@@ -2033,24 +2065,28 @@ declare module "node:test" {
              */
             enable(options?: MockTimersOptions): void;
             /**
-             * You can use the `.setTime()` method to manually move the mocked date to another time. This method only accepts a positive integer.
-             * Note: This method will execute any mocked timers that are in the past from the new time.
-             * In the below example we are setting a new time for the mocked date.
+             * Sets the current Unix timestamp that will be used as reference for any mocked
+             * `Date` objects.
+             *
              * ```js
              * import assert from 'node:assert';
              * import { test } from 'node:test';
-             * test('sets the time of a date object', (context) => {
-             *   // Optionally choose what to mock
-             *   context.mock.timers.enable({ apis: ['Date'], now: 100 });
-             *   assert.strictEqual(Date.now(), 100);
-             *   // Advance in time will also advance the date
-             *   context.mock.timers.setTime(1000);
-             *   context.mock.timers.tick(200);
-             *   assert.strictEqual(Date.now(), 1200);
+             *
+             * test('runAll functions following the given order', (context) => {
+             *   const now = Date.now();
+             *   const setTime = 1000;
+             *   // Date.now is not mocked
+             *   assert.deepStrictEqual(Date.now(), now);
+             *
+             *   context.mock.timers.enable({ apis: ['Date'] });
+             *   context.mock.timers.setTime(setTime);
+             *   // Date.now is now 1000
+             *   assert.strictEqual(Date.now(), setTime);
              * });
              * ```
+             * @since v21.2.0, v20.11.0
              */
-            setTime(time: number): void;
+            setTime(milliseconds: number): void;
             /**
              * This function restores the default behavior of all mocks that were previously
              * created by this `MockTimers` instance and disassociates the mocks

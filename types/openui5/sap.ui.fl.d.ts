@@ -1,4 +1,4 @@
-// For Library Version: 1.143.0
+// For Library Version: 1.145.0
 
 declare module "sap/ui/fl/library" {}
 
@@ -1603,9 +1603,9 @@ declare namespace sap {
 
     "sap/ui/fl/apply/_internal/flexState/compVariants/CompVariantManagementState": undefined;
 
-    "sap/ui/fl/apply/_internal/flexState/controlVariants/Switcher": undefined;
-
     "sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagementState": undefined;
+
+    "sap/ui/fl/apply/_internal/flexState/controlVariants/VariantManagerApply": undefined;
 
     "sap/ui/fl/apply/_internal/flexState/DataSelector": undefined;
 
@@ -1616,8 +1616,6 @@ declare namespace sap {
     "sap/ui/fl/apply/_internal/flexState/InitialPrepareFunctions": undefined;
 
     "sap/ui/fl/apply/_internal/flexState/UI2Personalization/UI2PersonalizationState": undefined;
-
-    "sap/ui/fl/apply/_internal/preprocessors/ComponentLifecycleHooks": undefined;
 
     "sap/ui/fl/apply/api/AnnotationChangeHandlerAPI": undefined;
 
@@ -1663,11 +1661,15 @@ declare namespace sap {
 
     "sap/ui/fl/initial/_internal/connectors/Utils": undefined;
 
+    "sap/ui/fl/initial/_internal/preprocessors/ComponentLifecycleHooks": undefined;
+
     "sap/ui/fl/initial/_internal/preprocessors/ControllerExtension": undefined;
 
     "sap/ui/fl/initial/_internal/Settings": undefined;
 
     "sap/ui/fl/initial/_internal/Storage": undefined;
+
+    "sap/ui/fl/initial/_internal/StorageFeaturesMerger": undefined;
 
     "sap/ui/fl/initial/_internal/StorageUtils": undefined;
 
@@ -1690,6 +1692,8 @@ declare namespace sap {
     "sap/ui/fl/support/api/SupportAPI": undefined;
 
     "sap/ui/fl/transport/TransportDialog": undefined;
+
+    "sap/ui/fl/util/CancelError": undefined;
 
     "sap/ui/fl/Utils": undefined;
 

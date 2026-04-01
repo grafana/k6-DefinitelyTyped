@@ -73,19 +73,34 @@ import { TextEncoder } from "node:util";
 }
 
 {
-    new DatabaseSync(":memory:", {
+    const db = new DatabaseSync(":memory:", {
         timeout: 10_000,
         readBigInts: true,
         returnArrays: true,
         allowBareNamedParameters: false,
         allowUnknownNamedParameters: true,
     });
+
+    const stmt = db.prepare("SELECT 1", {
+        readBigInts: true,
+        returnArrays: true,
+        allowBareNamedParameters: false,
+        allowUnknownNamedParameters: true,
+    });
+
+    // $ExpectType SQLOutputValue
+    stmt.get()![0];
 }
 
 {
     const database = new DatabaseSync(":memory:", { allowExtension: true });
     database.loadExtension("/path/to/extension.so");
     database.enableLoadExtension(false);
+}
+
+{
+    const database = new DatabaseSync(":memory:", { defensive: false });
+    database.enableDefensive(true);
 }
 
 {
@@ -101,7 +116,7 @@ import { TextEncoder } from "node:util";
     sourceDb.exec("CREATE TABLE data(key INTEGER PRIMARY KEY, value TEXT)");
     targetDb.exec("CREATE TABLE data(key INTEGER PRIMARY KEY, value TEXT)");
 
-    const session = sourceDb.createSession();
+    using session = sourceDb.createSession();
 
     const insert = sourceDb.prepare("INSERT INTO data (key, value) VALUES (?, ?)");
     insert.run(1, "hello");
@@ -158,7 +173,7 @@ import { TextEncoder } from "node:util";
     tagStore.iterate`SELECT * FROM users WHERE id = ${id}`; // $ExpectType Iterator<Record<string, SQLOutputValue>, undefined, any>
     tagStore.run`INSERT INTO users VALUES (${id}, ${name})`; // $ExpectType StatementResultingChanges
 
-    tagStore.size(); // $ExpectType number
+    tagStore.size; // $ExpectType number
     tagStore.capacity; // $ExpectType number
     tagStore.db; // $ExpectType DatabaseSync
     tagStore.clear();

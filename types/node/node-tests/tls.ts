@@ -60,6 +60,7 @@ import {
     tlsSocket.enableTrace();
 
     tlsSocket.encrypted; // $ExpectType true
+    tlsSocket.servername; // $ExpectType string | false | null
 
     const caCertificates: string[] = getCACertificates("default");
     const ciphers: string[] = getCiphers();
@@ -276,26 +277,31 @@ import {
     socket = socket.addListener("OCSPResponse", (response) => {
         const _response: Buffer = response;
     });
+    socket = socket.addListener("secure", () => {});
     socket = socket.addListener("secureConnect", () => {});
 
     socket = socket.on("OCSPResponse", (response) => {
         const _response: Buffer = response;
     });
+    socket = socket.on("secure", () => {});
     socket = socket.on("secureConnect", () => {});
 
     socket = socket.once("OCSPResponse", (response) => {
         const _response: Buffer = response;
     });
+    socket = socket.once("secure", () => {});
     socket = socket.once("secureConnect", () => {});
 
     socket = socket.prependListener("OCSPResponse", (response) => {
         const _response: Buffer = response;
     });
+    socket = socket.prependListener("secure", () => {});
     socket = socket.prependListener("secureConnect", () => {});
 
     socket = socket.prependOnceListener("OCSPResponse", (response) => {
         const _response: Buffer = response;
     });
+    socket = socket.prependOnceListener("secure", () => {});
     socket = socket.prependOnceListener("secureConnect", () => {});
 
     socket.once("session", (buff: Buffer) => {});
@@ -311,6 +317,33 @@ import {
 
 {
     const r00ts: readonly string[] = rootCertificates;
+}
+
+// Certificate DN fields are optional and can be string or string[] (multi-valued)
+{
+    const tlsSocket = connect({});
+    const peerCert = tlsSocket.getPeerCertificate();
+    const subject = peerCert.subject;
+
+    // Fields are optional and may be string or string[]
+    const cn: string | string[] | undefined = subject.CN;
+    const ou: string | string[] | undefined = subject.OU;
+    const o: string | string[] | undefined = subject.O;
+
+    // Type narrowing with Array.isArray
+    if (Array.isArray(subject.OU)) {
+        const ous: string[] = subject.OU;
+    } else {
+        const ou: string | undefined = subject.OU;
+    }
+
+    // Arbitrary DN attributes via index signature
+    const email: string | string[] | undefined = subject["emailAddress"];
+    const dc: string | string[] | undefined = subject["DC"];
+
+    // Issuer has the same shape
+    const issuer = peerCert.issuer;
+    const issuerCN: string | string[] | undefined = issuer.CN;
 }
 
 {

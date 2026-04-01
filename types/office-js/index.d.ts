@@ -250,9 +250,14 @@ declare namespace Office {
      */
     const devicePermission: DevicePermission;
     /**
+     * Provides options to manage the user interface of an Office Add-in while the add-in is running.
+     */
+    const extensionLifeCycle: ExtensionLifeCycle;
+    /**
      * Represents the ribbon associated with the Office application.
      */
     const ribbon: Ribbon;
+
     /**
      * Occurs when the runtime environment is loaded and the add-in is ready to start interacting with the application and hosted document.
      *
@@ -288,9 +293,10 @@ declare namespace Office {
      */
     function initialize(reason: InitializationReason): void;
     /**
-     * **WARNING**: This API returns inaccurate values when used on desktop applications. Use `Office.context.requirements.isSetSupported` instead.
-     * 
      * Checks if the specified requirement set is supported by the Office application.
+     *
+     * @deprecated This API returns inaccurate values when used on desktop applications. Use `Office.context.requirements.isSetSupported` instead.
+     *
      * @param name - Set name; e.g., "MatrixBindings".
      * @param minVersion - The minimum required version; e.g., "1.4".
      */
@@ -428,50 +434,50 @@ declare namespace Office {
         /**
          * Return or set data as text (string). Data is returned or set as a one-dimensional run of characters.
          */
-        Text,
+        Text = "text",
         /**
          * Return or set data as tabular data with no headers. Data is returned or set as an array of arrays containing one-dimensional runs of
          * characters. For example, three rows of  string values in two columns would be: [["R1C1", "R1C2"], ["R2C1", "R2C2"], ["R3C1", "R3C2"]].
          *
          * **Note**: Only applies to data in Excel and Word.
          */
-        Matrix,
+        Matrix = "matrix",
         /**
          * Return or set data as tabular data with optional headers. Data is returned or set as an array of arrays with optional headers.
          *
          * **Note**: Only applies to data in Excel and Word.
          */
-        Table,
+        Table = "table",
         /**
          * Return or set data as HTML.
          *
          * **Note**: Only applies to data in add-ins for Word and Outlook add-ins for Outlook (compose mode).
          */
-        Html,
+        Html = "html",
         /**
          * Return or set data as Office Open XML.
          *
          * **Note**: Only applies to data in Word.
          */
-        Ooxml,
+        Ooxml = "ooxml",
         /**
          * Return a JSON object that contains an array of the IDs, titles, and indexes of the selected slides. For example,
          * `{"slides":[{"id":257,"title":"Slide 2","index":2},{"id":256,"title":"Slide 1","index":1}]}` for a selection of two slides.
          *
-         * **Note**: Only applies to data in PowerPoint when calling the {@link Office.Document | Document}.getSelectedData method to get the current
+         * **Note**: Only applies to data in PowerPoint when calling the {@link Office.Document | Document}.getSelectedDataAsync method to get the current
          * slide or selected range of slides.
          */
-        SlideRange,
+        SlideRange = "slideRange",
         /**
          * Data is returned or set as an image stream.
          * **Note**: Only applies to data in Excel, Word, and PowerPoint.
          */
-        Image,
+        Image = "image",
         /**
          * Data is returned or set as XML data containing an SVG image.
          * **Note**: Only applies to data in Excel, Word, and PowerPoint.
          */
-        XmlSvg
+        XmlSvg = "xmlSvg"
     }
     /**
      * Specifies the type of the XML node.
@@ -601,7 +607,7 @@ declare namespace Office {
         /**
          * Occurs when data within the binding is changed in Excel or Word.
          * 
-         * To add an event handler for the `BindingDataChanged` event of a binding, use the `addHandlerAsync` method of the Binding object.
+         * To add an event handler for the `BindingDataChanged` event of a binding, use the `addHandlerAsync` method of the `Binding` object.
          * The event handler receives an argument of type {@link Office.BindingDataChangedEventArgs}.
          */
         BindingDataChanged,
@@ -609,7 +615,7 @@ declare namespace Office {
          * Occurs when the selection is changed within the binding in Excel or Word. 
          * 
          * To add an event handler for the `BindingSelectionChanged` event of a binding, use
-         * the `addHandlerAsync` method of the Binding object. The event handler receives an argument of type {@link Office.BindingSelectionChangedEventArgs}.
+         * the `addHandlerAsync` method of the `Binding` object. The event handler receives an argument of type {@link Office.BindingSelectionChangedEventArgs}.
          */
         BindingSelectionChanged,
         /**
@@ -3206,7 +3212,7 @@ declare namespace Office {
          * @param shortcuts An object of custom shortcuts with keys being the IDs of the actions and values being the shortcut combinations. For example, `{"SetItalic": "Ctrl+1", "SetBold": "Ctrl+2"}`.
          * To learn how to specify a valid action ID and a key combination, see {@link https://learn.microsoft.com/office/dev/add-ins/design/keyboard-shortcuts | Add custom keyboard shortcuts to your Office Add-ins}. (Note that a key combination can be `null`, in which case, the action keeps the key combination specified in the JSON file.)
          * @returns A promise that resolves when every custom shortcut assignment in `shortcuts` has been registered. Even if there is a conflict with existing shortcuts, the customized shortcut will be registered.
-         * Otherwise, the promise will be rejected with error code and error message. An "InvalidOperation" error code is returned if any action ID in `shortcuts` does not exist, or if shortcut combination is invalid.
+         * Otherwise, the promise will be rejected with an error code and error message. An `OfficeExtension.ErrorCodes.invalidArgument` error code is returned if any action ID in `shortcuts` doesn't exist, or if shortcut combination is invalid.
          */
         replaceShortcuts(shortcuts: {[actionId: string]: string}): Promise<void>;
         /**
@@ -3221,7 +3227,7 @@ declare namespace Office {
          *
          * - {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/shared-runtime-requirement-sets | SharedRuntime 1.1}
          *
-         * @returns A promise that resolves to an object of shortcuts, with keys being the IDs of the actions (as defined in an manifest) and values being the shortcut combinations. For example, `{"SetItalic": "Ctrl+1", "SetBold": "Ctrl+2", "SetUnderline": null}`.
+         * @returns A promise that resolves to an object of shortcuts, with keys being the IDs of the actions (as defined in a manifest) and values being the shortcut combinations. For example, `{"SetItalic": "Ctrl+1", "SetBold": "Ctrl+2", "SetUnderline": null}`.
          */
         getShortcuts(): Promise<{[actionId: string]: string|null}>;
         /**
@@ -3325,6 +3331,8 @@ declare namespace Office {
          * @returns A promise that is resolved when the UI is shown.
          * 
          * @remarks
+         * This method applies only to centrally deployed or sideloaded add-ins. For add-ins published in the Microsoft Marketplace, the method is ignored and the task pane doesn't open.
+         * 
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/shared-runtime-requirement-sets | SharedRuntime 1.1}
          */
         showAsTaskpane(): Promise<void>;
@@ -3369,6 +3377,8 @@ declare namespace Office {
          * The following outlines support information for Outlook.
          *
          * [Api set: Mailbox 1.3]
+         *
+         * See {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/add-in-commands-requirement-sets | Add-in commands requirement sets} for more support information.
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level (Outlook)}**: **restricted**
          *
@@ -3465,7 +3475,7 @@ declare namespace Office {
              *
              * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose
              */
-            allowEvent: boolean;
+            allowEvent?: boolean;
         }
         /**
          * Encapsulates source data for add-in events.
@@ -3478,6 +3488,8 @@ declare namespace Office {
          * The following outlines support information for Outlook.
          *
          * [Api set: Mailbox 1.3]
+         *
+         * See {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/add-in-commands-requirement-sets | Add-in commands requirement sets} for more support information.
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level (Outlook)}**: **restricted**
          *
@@ -3577,7 +3589,7 @@ declare namespace Office {
         value: T;
     }
     /**
-     * The Office Auth namespace, `Office.auth`, provides a method that allows the Office client application to obtain an access token to the add-in's web application.
+     * The Office Auth namespace, `Office.auth`, provides methods for the Office client application to obtain access tokens to the add-in's web application.
      * Indirectly, this also enables the add-in to access the signed-in user's Microsoft Graph data without requiring the user to sign in a second time.
      */
     interface Auth {
@@ -3668,7 +3680,7 @@ declare namespace Office {
          *
          * **Hosts**: Excel, OneNote, Outlook, PowerPoint, Word
          * 
-         * **Requirement set**: NestedAppAuth 1.1
+         * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/nested-app-auth-requirement-sets | NestedAppAuth 1.1}
          * 
          * @returns Promise to the AuthContext object.
          */
@@ -3731,6 +3743,10 @@ declare namespace Office {
     }
     /**
      * Represents the user information which can be passed to the Microsoft Authentication Library for JavaScript (MSAL.js).
+     * 
+     * @remarks
+     * 
+     * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/nested-app-auth-requirement-sets | NestedAppAuth 1.1}
      */
     interface AuthContext {
         /**
@@ -4038,7 +4054,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td>A string</td>
-         *     <td>The specified text is inserted as the value of the first bound cell. You can also specify a valid formula to add that formula to the bound cell. For example, setting data to <code>"=SUM(A1:A5)"</code> will total the values in the specified range. However, when you set a formula on the bound cell, after doing so, you can't read the added formula (or any pre-existing formula) from the bound cell. If you call the Binding.getDataAsync method on the bound cell to read its data, the method can return only the data displayed in the cell (the formula's result).</td>
+         *     <td>The specified text is inserted as the value of the first bound cell. You can also specify a valid formula to add that formula to the bound cell. For example, setting data to <code>"=SUM(A1:A5)"</code> will total the values in the specified range. However, when you set a formula on the bound cell, after doing so, you can't read the added formula (or any pre-existing formula) from the bound cell. If you call the <code>Binding.getDataAsync</code> method on the bound cell to read its data, the method can return only the data displayed in the cell (the formula's result).</td>
          *   </tr>
          *   <tr>
          *     <td>An array of arrays ("matrix"), and the shape exactly matches the shape of the binding specified</td>
@@ -4090,7 +4106,7 @@ declare namespace Office {
          *
          * @param data The data to be set in the current selection. Possible data types by Office application:
          *
-         *        string: Excel on the web and Windows, and Word on the web and on Windows only
+         *        string: Excel on the web and on Windows, and Word on the web and on Windows only
          *
          *        array of arrays: Excel and Word only
          *
@@ -4185,7 +4201,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td>A string</td>
-         *     <td>The specified text is inserted as the value of the first bound cell. You can also specify a valid formula to add that formula to the bound cell. For example, setting  data to <code>"=SUM(A1:A5)"</code> will total the values in the specified range. However, when you set a formula on the bound cell, after doing so, you can't read the added formula (or any pre-existing formula) from the bound cell. If you call the <code>Binding.getDataAsync</code> method on the bound cell to read its data, the method can return only the data displayed in the cell (the formula's result).</td>
+         *     <td>The specified text is inserted as the value of the first bound cell. You can also specify a valid formula to add that formula to the bound cell. For example, setting data to <code>"=SUM(A1:A5)"</code> will total the values in the specified range. However, when you set a formula on the bound cell, after doing so, you can't read the added formula (or any pre-existing formula) from the bound cell. If you call the <code>Binding.getDataAsync</code> method on the bound cell to read its data, the method can return only the data displayed in the cell (the formula's result).</td>
          *   </tr>
          *   <tr>
          *     <td>An array of arrays ("matrix"), and the shape exactly matches the shape of the binding specified</td>
@@ -4717,7 +4733,7 @@ declare namespace Office {
          */
         license: object;
         /**
-         Provides access to the Microsoft Outlook add-in object model.
+         * Provides access to the Microsoft Outlook add-in object model.
          *
          * @remarks
          *
@@ -4732,10 +4748,17 @@ declare namespace Office {
          * - `item`: Provides methods and properties for accessing a message or appointment in an Outlook add-in.
          *
          * - `userProfile`: Provides information about the user in an Outlook add-in.
+         *
+         * To learn more about the `Mailbox` object, see {@link https://learn.microsoft.com/office/dev/add-ins/outlook/apis#mailbox-object | Outlook add-in APIs}.
          */
         mailbox: Office.Mailbox;
         /**
          * Provides access to the properties for Office theme colors.
+         *
+         * @remarks
+         *
+         * **Important**: In Outlook, `officeTheme` is supported starting in {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-14 | Mailbox requirement set 1.14}.
+         * It isn't supported in Outlook add-ins that implement {@link https://learn.microsoft.com/office/dev/add-ins/develop/event-based-activation | event-based activation}.
          */
         officeTheme: OfficeTheme;
         /**
@@ -4773,6 +4796,8 @@ declare namespace Office {
          * that add-in when it is running from any client application used to access that mailbox.
          *
          * @remarks
+         *
+         * [Api set: Mailbox 1.1]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **restricted**
          *
@@ -5210,7 +5235,7 @@ declare namespace Office {
         getNodesAsync(xPath: string, options?: Office.AsyncContextOptions, callback?: (result: AsyncResult<CustomXmlNode[]>) => void): void;
         /**
          * Asynchronously gets any CustomXmlNodes in this custom XML part which match the specified XPath.
-     /    *
+         *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#customxmlparts | CustomXmlParts}
@@ -5915,7 +5940,7 @@ declare namespace Office {
          */
         getFilePropertiesAsync(callback?: (result: AsyncResult<Office.FileProperties>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `Text` coercion type.
          *
          * @remarks
          *
@@ -5927,7 +5952,7 @@ declare namespace Office {
          *
          * **Supported applications**: Excel, PowerPoint, Project, Word
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -5937,7 +5962,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.value</code></td>
-         *     <td>Access the selected data as a string. If the selection does not contain text, returns an empty string.</td>
+         *     <td>Access the selected data as a string. If the selection doesn't contain text, returns an empty string.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.status</code></td>
@@ -5945,24 +5970,24 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.Text`.
          *
-         * @param options Provides options for customizing what data is returned and how it is formatted.
+         * @param options Provides options for customizing what data is returned and how it's formatted.
          *
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is a string containing the selected text.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.Text, options?: GetSelectedDataOptions, callback?: (result: AsyncResult<string>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `Table` coercion type.
          *
          * @remarks
          *
@@ -5974,7 +5999,7 @@ declare namespace Office {
          *
          * **Supported applications**: Excel, Word
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -5984,7 +6009,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.value</code></td>
-         *     <td>Access the selected data as a {@link Office.TableData} object. Returns null if no table is selected.</td>
+         *     <td>Access the selected data as a {@link Office.TableData} object. Returns `null` if no table is selected.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.status</code></td>
@@ -5992,22 +6017,22 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.Table`.
-         * @param options Provides options for customizing what data is returned and how it is formatted.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param options Provides options for customizing what data is returned and how it's formatted.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is a {@link Office.TableData} object containing the data in the current selection.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.Table, options?: GetSelectedDataOptions, callback?: (result: AsyncResult<TableData>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `Matrix` coercion type.
          *
          * @remarks
          *
@@ -6019,7 +6044,7 @@ declare namespace Office {
          *
          * **Supported applications**: Excel, Word
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6037,22 +6062,22 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.Matrix`.
-         * @param options Provides options for customizing what data is returned and how it is formatted.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param options Provides options for customizing what data is returned and how it's formatted.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is an array of arrays containing the data in the current selection.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.Matrix, options?: GetSelectedDataOptions, callback?: (result: AsyncResult<any[][]>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `SlideRange` coercion type.
          *
          * @remarks
          *
@@ -6060,7 +6085,7 @@ declare namespace Office {
          *
          * **Supported application**: PowerPoint
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6078,17 +6103,17 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.SlideRange`.
-         * @param options Provides options for customizing what data is returned and how it is formatted.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param options Provides options for customizing what data is returned and how it's formatted.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is a {@link Office.SlideRange} object containing the selected slides.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.SlideRange, options?: GetSelectedDataOptions, callback?: (result: AsyncResult<SlideRange>) => void): void;
@@ -6148,7 +6173,7 @@ declare namespace Office {
          *   </tr>
          * </table>
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6158,7 +6183,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.value</code></td>
-         *     <td>Access the selected data. The type depends on the coercionType parameter specified in the call.</td>
+         *     <td>Access the selected data. The type depends on the <code>coercionType</code> parameter specified in the call.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.status</code></td>
@@ -6166,27 +6191,27 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
-         * For other coercion types or when the coercion type is not known at compile time, use the generic version of this method
+         * For other coercion types or when the coercion type isn't known at compile time, use the generic version of this method
          * and specify the type parameter explicitly.
          *
          * @param coercionType The type of data structure to return. See the Remarks section for each application's supported coercion types.
-         * @param options Provides options for customizing what data is returned and how it is formatted.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param options Provides options for customizing what data is returned and how it's formatted.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is the data in the current selection.
-         *                  This is returned in the data structure or format you specified with the coercionType parameter.
+         *                  This is returned in the data structure or format you specified with the `coercionType` parameter.
          *                  (See Remarks for more information about data coercion.)
          */
         getSelectedDataAsync<T>(coercionType: Office.CoercionType, options?: GetSelectedDataOptions, callback?: (result: AsyncResult<T>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `Text` coercion type.
          *
          * @remarks
          *
@@ -6198,7 +6223,7 @@ declare namespace Office {
          *
          * **Supported applications**: Excel, PowerPoint, Project, Word
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6216,21 +6241,21 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.Text`.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is a string containing the selected text.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.Text, callback?: (result: AsyncResult<string>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `Table` coercion type.
          *
          * @remarks
          *
@@ -6242,7 +6267,7 @@ declare namespace Office {
          *
          * **Supported applications**: Excel, Word
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6252,7 +6277,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.value</code></td>
-         *     <td>Access the selected data as a {@link Office.TableData} object. Returns null if no table is selected.</td>
+         *     <td>Access the selected data as a {@link Office.TableData} object. Returns `null` if no table is selected.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.status</code></td>
@@ -6260,21 +6285,21 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.Table`.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is a {@link Office.TableData} object containing the data in the current selection.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.Table, callback?: (result: AsyncResult<TableData>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `Matrix` coercion type.
          *
          * @remarks
          *
@@ -6286,7 +6311,7 @@ declare namespace Office {
          *
          * **Supported applications**: Excel, Word
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6304,21 +6329,21 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.Matrix`.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is an array of arrays containing the data in the current selection.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.Matrix, callback?: (result: AsyncResult<any[][]>) => void): void;
         /**
-         * Reads the data contained in the current selection in the document.
+         * Reads the data contained in the current selection in the document using the `SlideRange` coercion type.
          *
          * @remarks
          *
@@ -6326,7 +6351,7 @@ declare namespace Office {
          *
          * **Supported application**: PowerPoint
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6344,16 +6369,16 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
          * @param coercionType Must be `Office.CoercionType.SlideRange`.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is a {@link Office.SlideRange} object containing the selected slides.
          */
         getSelectedDataAsync(coercionType: Office.CoercionType.SlideRange, callback?: (result: AsyncResult<SlideRange>) => void): void;
@@ -6413,7 +6438,7 @@ declare namespace Office {
          *   </tr>
          * </table>
          *
-         * In the callback function that is passed to the getSelectedDataAsync method, you can use the properties of the AsyncResult object to return
+         * In the `callback` function that's passed to the `getSelectedDataAsync` method, you can use the properties of the `AsyncResult` object to return
          * the following information.
          *
          * <table>
@@ -6423,7 +6448,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.value</code></td>
-         *     <td>Access the selected data. The type depends on the coercionType parameter specified in the call.</td>
+         *     <td>Access the selected data. The type depends on the `coercionType` parameter specified in the call.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.status</code></td>
@@ -6431,11 +6456,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
@@ -6443,9 +6468,9 @@ declare namespace Office {
          * and specify the type parameter explicitly.
          *
          * @param coercionType The type of data structure to return. See the Remarks section for each application's supported coercion types.
-         * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
+         * @param callback Optional. A function that's invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result is the data in the current selection.
-         *                  This is returned in the data structure or format you specified with the coercionType parameter.
+         *                  This is returned in the data structure or format you specified with the `coercionType` parameter.
          *                  (See Remarks for more information about data coercion.)
          */
         getSelectedDataAsync<T>(coercionType: Office.CoercionType, callback?: (result: AsyncResult<T>) => void): void;
@@ -7049,7 +7074,7 @@ declare namespace Office {
          */
         getWSSUrlAsync(options?: Office.AsyncContextOptions, callback?: (result: AsyncResult<any>) => void): void;
         /**
-         * Project documents only. Get the WSS Url and list name for the Tasks List, the MPP is synced too.
+         * Project documents only. Get the WSS URL and list name for the Tasks List, the MPP is synced too.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
          *                  The `value` property of the result contains the following properties:
          *                  `listName` - the name of the synchronized SharePoint task list.
@@ -7163,7 +7188,7 @@ declare namespace Office {
          *
          * **Important**: This API works only in Project on Windows desktop.
          *
-         * @param resourceId Either a string or value of the Resource Id.
+         * @param resourceId Either a string or value of the resource ID.
          * @param fieldId Resource Fields.
          * @param fieldValue Value of the target field.
          * @param callback Optional. A function that is invoked when the callback returns, whose only parameter is of type {@link Office.AsyncResult}.
@@ -7175,7 +7200,7 @@ declare namespace Office {
          *
          * **Important**: This API works only in Project on Windows desktop.
          *
-         * @param taskId Either a string or value of the Task ID.
+         * @param taskId Either a string or value of the task ID.
          * @param fieldId Task Fields.
          * @param fieldValue Value of the target field.
          * @param options Provides an option for preserving context data of any type, unchanged, for use in a callback.
@@ -7608,7 +7633,7 @@ declare namespace Office {
      * </table>
      *
      * **Important**: In Outlook, the Office theme API is supported starting in
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.14/outlook-requirement-set-1.14 | Mailbox requirement set 1.14}.
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-14 | Mailbox requirement set 1.14}.
      * It isn't supported in Outlook add-ins that implement {@link https://learn.microsoft.com/office/dev/add-ins/develop/event-based-activation | event-based activation}.
      */
     interface OfficeTheme {
@@ -7896,24 +7921,24 @@ declare namespace Office {
      *
      * The name of a setting is a string, while the value can be a string, number, boolean, null, object, or array.
      *
-     * The Settings object is automatically loaded as part of the Document object, and is available by calling the settings property of that object
+     * The `Settings` object is automatically loaded as part of the `Document` object, and is available by calling the settings property of that object
      * when the add-in is activated.
      *
-     * The developer is responsible for calling the saveAsync method after adding or deleting settings to save the settings in the document.
+     * The developer is responsible for calling the `saveAsync` method after adding or deleting settings to save the settings in the document.
      */
     interface Settings {
         /**
-         * Adds an event handler for the settingsChanged event.
+         * Adds an event handler for the `settingsChanged` event.
          *
-         * **Important**: Your add-in's code can register a handler for the settingsChanged event when the add-in is running with any Excel client, but
+         * **Important**: Your add-in's code can register a handler for the `settingsChanged` event when the add-in is running with any Excel client, but
          * the event will fire only when the add-in is loaded with a spreadsheet that is opened in Excel on the web, and more than one user is editing the
-         * spreadsheet (coauthoring). Therefore, effectively the settingsChanged event is supported only in Excel on the web in coauthoring scenarios.
+         * spreadsheet (coauthoring). Therefore, effectively the `settingsChanged` event is supported only in Excel on the web in coauthoring scenarios.
          *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#methods-that-arent-part-of-a-requirement-set | Not in a set}
          *
-         * You can add multiple event handlers for the specified eventType as long as the name of each event handler function is unique.
+         * You can add multiple event handlers for the specified `eventType` as long as the name of each event handler function is unique.
          *
          * @param eventType Specifies the type of event to add. Required.
          * @param handler The event handler function to add, whose only parameter is of type {@link Office.SettingsChangedEventArgs}. Required.
@@ -7935,27 +7960,27 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          */
         addHandlerAsync(eventType: Office.EventType, handler: any, options?: Office.AsyncContextOptions, callback?: (result: AsyncResult<void>) => void): void;
         /**
-         * Adds an event handler for the settingsChanged event.
+         * Adds an event handler for the `settingsChanged` event.
          *
-         * **Important**: Your add-in's code can register a handler for the settingsChanged event when the add-in is running with any Excel client, but
+         * **Important**: Your add-in's code can register a handler for the `settingsChanged` event when the add-in is running with any Excel client, but
          * the event will fire only when the add-in is loaded with a spreadsheet that is opened in Excel on the web, and more than one user is editing the
-         * spreadsheet (coauthoring). Therefore, effectively the settingsChanged event is supported only in Excel on the web in coauthoring scenarios.
+         * spreadsheet (coauthoring). Therefore, effectively the `settingsChanged` event is supported only in Excel on the web in coauthoring scenarios.
          *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#methods-that-arent-part-of-a-requirement-set | Not in a set}
          *
-         * You can add multiple event handlers for the specified eventType as long as the name of each event handler function is unique.
+         * You can add multiple event handlers for the specified `eventType` as long as the name of each event handler function is unique.
          *
          * @param eventType Specifies the type of event to add. Required.
          * @param handler The event handler function to add, whose only parameter is of type {@link Office.SettingsChangedEventArgs}. Required.
@@ -7976,11 +8001,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          */
@@ -8006,10 +8031,10 @@ declare namespace Office {
          * This method is useful in Excel, Word, and PowerPoint coauthoring scenarios when multiple instances of the same add-in are working against
          * the same document. Because each add-in is working against an in-memory copy of the settings loaded from the document at the time the user
          * opened it, the settings values used by each user can get out of sync. This can happen whenever an instance of the add-in calls the
-         * Settings.saveAsync method to persist all of that user's settings to the document. Calling the refreshAsync method from the event handler
-         * for the settingsChanged event of the add-in will refresh the settings values for all users.
+         * `Settings.saveAsync` method to persist all of that user's settings to the document. Calling the `refreshAsync` method from the event handler
+         * for the `settingsChanged` event of the add-in will refresh the settings values for all users.
          *
-         * In the callback function passed to the refreshAsync method, you can use the properties of the AsyncResult object to return the following
+         * In the callback function passed to the `refreshAsync` method, you can use the properties of the `AsyncResult` object to return the following
          * information.
          *
          * <table>
@@ -8019,7 +8044,7 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.value</code></td>
-         *     <td>Access a Settings object with the refreshed values.</td>
+         *     <td>Access a <code>Settings</code> object with the refreshed values.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.status</code></td>
@@ -8027,11 +8052,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
@@ -8042,33 +8067,33 @@ declare namespace Office {
         /**
          * Removes the specified setting.
          *
-         * **Important**: Be aware that the Settings.remove method affects only the in-memory copy of the settings property bag. To persist the removal of
-         * the specified setting in the document, at some point after calling the Settings.remove method and before the add-in is closed, you must
-         * call the Settings.saveAsync method.
+         * **Important**: Be aware that the `Settings.remove` method affects only the in-memory copy of the settings property bag. To persist the removal of
+         * the specified setting in the document, at some point after calling the `Settings.remove` method and before the add-in is closed, you must
+         * call the `Settings.saveAsync` method.
          *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#settings | Settings}
          *
-         * null is a valid value for a setting. Therefore, assigning null to the setting will not remove it from the settings property bag.
+         * `null` is a valid value for a setting. Therefore, assigning `null` to the setting will not remove it from the settings property bag.
          *
          * @param settingName The case-sensitive name of the setting to remove.
          */
         remove(name: string): void;
         /**
-         * Removes an event handler for the settingsChanged event.
+         * Removes an event handler for the `settingsChanged` event.
          *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#methods-that-arent-part-of-a-requirement-set | Not in a set}
          *
-         * If the optional handler parameter is omitted when calling the removeHandlerAsync method, all event handlers for the specified eventType
+         * If the optional handler parameter is omitted when calling the `removeHandlerAsync` method, all event handlers for the specified `eventType`
          * will be removed.
          *
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback
+         * When the function you passed to the callback parameter executes, it receives an `AsyncResult` object that you can access from the callback
          * function's only parameter.
          *
-         * In the callback function passed to the removeHandlerAsync method, you can use the properties of the AsyncResult object to return the
+         * In the callback function passed to the `removeHandlerAsync` method, you can use the properties of the `AsyncResult` object to return the
          * following information.
          *
          * <table>
@@ -8086,11 +8111,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
@@ -8100,19 +8125,19 @@ declare namespace Office {
          */
         removeHandlerAsync(eventType: Office.EventType, options?: RemoveHandlerOptions, callback?: (result: AsyncResult<void>) => void): void;
         /**
-         * Removes an event handler for the settingsChanged event.
+         * Removes an event handler for the `settingsChanged` event.
          *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#methods-that-arent-part-of-a-requirement-set | Not in a set}
          *
-         * If the optional handler parameter is omitted when calling the removeHandlerAsync method, all event handlers for the specified eventType
+         * If the optional handler parameter is omitted when calling the `removeHandlerAsync` method, all event handlers for the specified `eventType`
          * will be removed.
          *
-         * When the function you passed to the callback parameter executes, it receives an AsyncResult object that you can access from the callback
+         * When the function you passed to the callback parameter executes, it receives an `AsyncResult` object that you can access from the callback
          * function's only parameter.
          *
-         * In the callback function passed to the removeHandlerAsync method, you can use the properties of the AsyncResult object to return the
+         * In the callback function passed to the `removeHandlerAsync` method, you can use the properties of the `AsyncResult` object to return the
          * following information.
          *
          * <table>
@@ -8130,11 +8155,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
@@ -8150,11 +8175,11 @@ declare namespace Office {
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#settings | Settings}
          *
          * Any settings previously saved by an add-in are loaded when it is initialized, so during the lifetime of the session you can just use the
-         * set and get methods to work with the in-memory copy of the settings property bag. When you want to persist the settings so that they are
-         * available the next time the add-in is used, use the saveAsync method.
+         * `set` and `get` methods to work with the in-memory copy of the settings property bag. When you want to persist the settings so that they are
+         * available the next time the add-in is used, use the `saveAsync` method.
          *
-         * **Note**: The saveAsync method persists the in-memory settings property bag into the document file. However, the changes to the document file
-         * itself are saved only when the user (or AutoRecover setting) saves the document to the file system. The refreshAsync method is only useful
+         * **Note**: The `saveAsync` method persists the in-memory settings property bag into the document file. However, the changes to the document file
+         * itself are saved only when the user (or AutoRecover setting) saves the document to the file system. The `refreshAsync` method is only useful
          * in coauthoring scenarios when other instances of the same add-in might change the settings and those changes should be made available to
          * all instances.
          *
@@ -8173,11 +8198,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
@@ -8193,11 +8218,11 @@ declare namespace Office {
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#settings | Settings}
          *
          * Any settings previously saved by an add-in are loaded when it is initialized, so during the lifetime of the session you can just use the
-         * set and get methods to work with the in-memory copy of the settings property bag. When you want to persist the settings so that they are
-         * available the next time the add-in is used, use the saveAsync method.
+         * `set` and `get` methods to work with the in-memory copy of the settings property bag. When you want to persist the settings so that they are
+         * available the next time the add-in is used, use the `saveAsync` method.
          *
-         * **Note**: The saveAsync method persists the in-memory settings property bag into the document file. However, the changes to the document file
-         * itself are saved only when the user (or AutoRecover setting) saves the document to the file system. The refreshAsync method is only useful
+         * **Note**: The `saveAsync` method persists the in-memory settings property bag into the document file. However, the changes to the document file
+         * itself are saved only when the user (or AutoRecover setting) saves the document to the file system. The `refreshAsync` method is only useful
          * in coauthoring scenarios when other instances of the same add-in might change the settings and those changes should be made available to
          * all instances.
          *
@@ -8216,11 +8241,11 @@ declare namespace Office {
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.error</code></td>
-         *     <td>Access an Error object that provides error information if the operation failed.</td>
+         *     <td>Access an <code>Error</code> object that provides error information if the operation failed.</td>
          *   </tr>
          *   <tr>
          *     <td><code>AsyncResult.asyncContext</code></td>
-         *     <td>Define an item of any type that's returned in the AsyncResult object without being altered.</td>
+         *     <td>Define an item of any type that's returned in the <code>AsyncResult</code> object without being altered.</td>
          *   </tr>
          * </table>
          *
@@ -8230,17 +8255,17 @@ declare namespace Office {
         /**
          * Sets or creates the specified setting.
          *
-         * **Important**: Be aware that the Settings.set method affects only the in-memory copy of the settings property bag.
+         * **Important**: Be aware that the `Settings.set` method affects only the in-memory copy of the settings property bag.
          * To make sure that additions or changes to settings will be available to your add-in the next time the document is opened, at some point
-         * after calling the Settings.set method and before the add-in is closed, you must call the Settings.saveAsync method to persist settings in
+         * after calling the `Settings.set` method and before the add-in is closed, you must call the `Settings.saveAsync` method to persist settings in
          * the document.
          *
          * @remarks
          *
          * **Requirement set**: {@link https://learn.microsoft.com/javascript/api/requirement-sets/common/office-add-in-requirement-sets#settings | Settings}
          *
-         * The set method creates a new setting of the specified name if it does not already exist, or sets an existing setting of the specified name
-         * in the in-memory copy of the settings property bag. After you call the Settings.saveAsync method, the value is stored in the document as
+         * The `set` method creates a new setting of the specified name if it does not already exist, or sets an existing setting of the specified name
+         * in the in-memory copy of the settings property bag. After you call the `Settings.saveAsync` method, the value is stored in the document as
          * the serialized JSON representation of its data type.
          *
          * @param settingName The case-sensitive name of the setting to set or create.
@@ -10820,8 +10845,8 @@ declare namespace Office {
      * The subclass of {@link Office.Item | Item} dealing with appointments.
      *
      * **Important**: This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * Child interfaces:
      *
@@ -10835,8 +10860,8 @@ declare namespace Office {
      * The appointment organizer mode of {@link Office.Item | Office.context.mailbox.item}.
      *
      * **Important**: This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * Parent interfaces:
      *
@@ -11297,10 +11322,7 @@ declare namespace Office {
          */
         addFileAttachmentFromBase64Async(base64File: string, attachmentName: string, callback?: (asyncResult: Office.AsyncResult<string>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -11308,6 +11330,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Organizer
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -11319,10 +11343,7 @@ declare namespace Office {
          */
         addHandlerAsync(eventType: Office.EventType | string, handler: any, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -11330,6 +11351,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Organizer
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -11555,7 +11578,7 @@ declare namespace Office {
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
          *                 type `Office.AsyncResult`. If the call fails, the `asyncResult.error` property will contain an error code with the reason for
-         *                 the failure.
+         *                 the failure. If the call succeeds, an array of `AttachmentDetailsCompose` objects is returned in the `asyncResult.value` property.
          */
         getAttachmentsAsync(options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<AttachmentDetailsCompose[]>) => void): void;
         /**
@@ -11573,7 +11596,7 @@ declare namespace Office {
          *
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
          *                 type `Office.AsyncResult`. If the call fails, the `asyncResult.error` property will contain an error code with the reason for
-         *                 the failure.
+         *                 the failure. If the call succeeds, an array of `AttachmentDetailsCompose` objects is returned in the `asyncResult.value` property.
          */
         getAttachmentsAsync(callback?: (asyncResult: Office.AsyncResult<AttachmentDetailsCompose[]>) => void): void;
         /**
@@ -11901,10 +11924,7 @@ declare namespace Office {
          */
         removeAttachmentAsync(attachmentId: string, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -11912,6 +11932,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Organizer
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param options - An object literal that contains one or more of the following properties:-
@@ -11921,10 +11943,7 @@ declare namespace Office {
          */
         removeHandlerAsync(eventType: Office.EventType | string, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -11932,6 +11951,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Organizer
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
@@ -12154,183 +12175,120 @@ declare namespace Office {
         setSelectedDataAsync(data: string, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
     }
     /**
-     * The `AppointmentForm` object is used to access the currently selected appointment.
+     * Represents the details of the form for creating a new appointment.
      *
      * @remarks
      *
-     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **restricted**
+     * [Api set: Mailbox 1.1]
      *
-     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
      */
     interface AppointmentForm {
         /**
-         * Gets an object that provides methods for manipulating the body of an item.
+         * Sets the body of the appointment.
          *
          * @remarks
+         *
          * [Api set: Mailbox 1.1]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
-         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
-        body: Body | string;
+        body?: string;
         /**
-         * Gets or sets the date and time that the appointment is to end.
-         *
-         * The `end` property is expressed as a Coordinated Universal Time (UTC) date and time value. You can use the `convertToLocalClientTime` method to
-         * convert the `end` property value to the client's local date and time.
-         *
-         * *Read mode*
-         *
-         * The `end` property returns a `Date` object.
-         *
-         * *Compose mode*
-         *
-         * The `end` property returns a `Time` object.
-         *
-         * When you use the `Time.setAsync` method to set the end time, you should use the `convertToUtcClientTime` method to convert the local time on
-         * the client to UTC for the server.
+         * Sets the date and time that the appointment is to end.
          *
          * @remarks
          *
+        * [Api set: Mailbox 1.1]
+         *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
-         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
-        end: Time | Date;
+        end?: Date | number;
         /**
-        * Gets or sets the location of an appointment.
-        *
-        * *Read mode*
-        *
-        * The `location` property returns a string that contains the location of the appointment.
-        *
-        * *Compose mode*
-        *
-        * The `location` property returns a `Location` object that provides methods that are used to get and set the location of the appointment.
+        * Sets the location of the appointment.
         *
         * @remarks
         *
+        * [Api set: Mailbox 1.1]
+        *
         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
         *
-        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
         */
-       location: Location | string;
+       location?: string;
        /**
-        * Provides access to the optional attendees of an event. The type of object and level of access depend on the mode of the current item.
-        *
-        * *Read mode*
-        *
-        * The `optionalAttendees` property returns an array that contains an {@link Office.EmailAddressDetails | EmailAddressDetails} object for
-        * each optional attendee to the meeting. Collection size limits:
-        *
-        * - Web browser, new Mac UI, Android: No limit
-        *
-        * - Windows: 500 members
-        *
-        * - Classic Mac UI: 100 members
-        *
-        * *Compose mode*
-        *
-        * The `optionalAttendees` property returns a `Recipients` object that provides methods to get or update the
-        * optional attendees for a meeting. However, depending on the client/platform (i.e., Windows, Mac, etc.), limits may apply on how many
-        * recipients you can get or update. See the {@link Office.Recipients | Recipients} object for more details.
+        * Sets the optional attendees of the appointment.
         *
         * @remarks
         *
+        * [Api set: Mailbox 1.1]
+        *
         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
         *
-        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
         */
-       optionalAttendees: Recipients[] | EmailAddressDetails[];
+       optionalAttendees?: string[] | EmailAddressDetails[];
        /**
-        * Provides access to the resources of an event. Returns an array of strings containing the resources required for the appointment.
+        * Sets the resources of the appointment.
         *
         * @remarks
         *
+        * [Api set: Mailbox 1.1]
+        *
         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
         *
-        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
         */
-       resources: string[];
+       resources?: string[];
        /**
-        * Provides access to the required attendees of an event. The type of object and level of access depend on the mode of the current item.
-        *
-        * *Read mode*
-        *
-        * The `requiredAttendees` property returns an array that contains an {@link Office.EmailAddressDetails | EmailAddressDetails} object for
-        * each required attendee to the meeting. Collection size limits:
-        *
-        * - Web browser, new Mac UI, Android: No limit
-        *
-        * - Windows: 500 members
-        *
-        * - Classic Mac UI: 100 members
-        *
-        * *Compose mode*
-        *
-        * The `requiredAttendees` property returns a `Recipients` object that provides methods to get or update the
-        * required attendees for a meeting. However, depending on the client/platform (i.e., Windows, Mac, etc.), limits may apply on how many
-        * recipients you can get or update. See the {@link Office.Recipients | Recipients} object for more details.
+        * Sets the required attendees of the appointment.
         *
         * @remarks
         *
+        * [Api set: Mailbox 1.1]
+        *
         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
         *
-        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
         */
-       requiredAttendees: Recipients[] | EmailAddressDetails[];
+       requiredAttendees?: string[] | EmailAddressDetails[];
        /**
-        * Gets or sets the date and time that the appointment is to begin.
-        *
-        * The `start` property is expressed as a Coordinated Universal Time (UTC) date and time value. You can use the `convertToLocalClientTime` method
-        * to convert the value to the client's local date and time.
-        *
-        * *Read mode*
-        *
-        * The `start` property returns a `Date` object.
-        *
-        * *Compose mode*
-        *
-        * The `start` property returns a `Time` object.
-        *
-        * When you use the `Time.setAsync` method to set the start time, you should use the `convertToUtcClientTime` method to convert the local time on
-        * the client to UTC for the server.
+        * Sets the date and time that the appointment is to begin.
         *
         * @remarks
         *
+        * [Api set: Mailbox 1.1]
+        *
         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
         *
-        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
         */
-       start: Time | Date;
+       start?: Date | number;
        /**
-        * Gets or sets the description that appears in the subject field of an item.
-        *
-        * The `subject` property gets or sets the entire subject of the item, as sent by the email server.
-        *
-        * *Read mode*
-        *
-        * The `subject` property returns a string. Use the `normalizedSubject` property to get the subject minus any leading prefixes such as RE: and FW:.
-        *
-        * *Compose mode*
-        *
-        * The `subject` property returns a `Subject` object that provides methods to get and set the subject.
+        * Sets the description that appears in the Title field of the appointment.
         *
         * @remarks
         *
+        * [Api set: Mailbox 1.1]
+        *
         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
         *
-        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+        * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
         */
-       subject: Subject | string;
+       subject?: string;
     }
     /**
      * The appointment attendee mode of {@link Office.Item | Office.context.mailbox.item}.
      *
      * **Important**: This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * Parent interfaces:
      *
@@ -12666,10 +12624,7 @@ declare namespace Office {
          */
         sensitivity: MailboxEnums.AppointmentSensitivityType;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -12677,6 +12632,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Attendee
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -12688,10 +12645,7 @@ declare namespace Office {
          */
         addHandlerAsync(eventType: Office.EventType | string, handler: any, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -12699,6 +12653,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Attendee
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -13238,10 +13194,7 @@ declare namespace Office {
          */
         loadCustomPropertiesAsync(callback: (asyncResult: Office.AsyncResult<CustomProperties>) => void, userContext?: any): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -13249,6 +13202,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Attendee
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param options - An object literal that contains one or more of the following properties:-
@@ -13258,17 +13213,15 @@ declare namespace Office {
          */
         removeHandlerAsync(eventType: Office.EventType | string, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
-         *
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          * @remarks
          * [Api set: Mailbox 1.7]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Appointment Attendee
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
@@ -13388,13 +13341,43 @@ declare namespace Office {
          */
         contentId: string;
         /**
-         * Gets the index of the attachment.
+         * Gets the identifier of an attachment. The value varies depending on the Outlook client.
+         *
+         * - In Outlook on the web and the new Outlook on Windows, the identifier is the Exchange Web Services (EWS) ID.
+         * For inline attachments, the initial identifier is a temporary attachment ID, prefixed with `addinId`, while the attachment is uploaded to the server.
+         * Once the upload completes, the attachment receives an EWS ID. For details, see the notes in the Remarks section.
+         *
+         * - In Outlook on Windows (classic) and on Mac, the identifier for inline and non-inline attachments is the index of the attachment.
+         *
+         * @remarks
+         *
+         * **Important**: Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
          */
         id: string;
         /**
          * Gets a value that indicates whether the attachment appears as an image in the body of the item instead of in the attachment list.
          */
         isInline: boolean;
+        /**
+         * In Outlook on the web and the new Outlook on Windows, indicates whether an inline attachment in a message has been uploaded to the server and assigned an Exchange Web Services (EWS) ID.
+         *
+         * @remarks
+         *
+         * **Important**:
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID in the `id` property and their `isServiceAccessible` property is set to `true`.
+         * The temporary attachment ID is only supported for the duration of the current compose session. For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on Windows (classic) and on Mac, the `isServiceAccessible` property always returns `false` since the attachment ID is the index of the attachment.
+         */
+        isServiceAccessible: boolean;
         /**
          * Gets the name of the attachment.
          *
@@ -15785,9 +15768,6 @@ declare namespace Office {
      * The item namespace is used to access the currently selected message, meeting request, or appointment.
      * You can determine the type of the item by using the `itemType` property.
      *
-     * To see the full member list, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
-     *
      * If you want to see IntelliSense for only a specific type or mode, cast this item to one of the following:
      *
      * - {@link Office.AppointmentCompose | AppointmentCompose}
@@ -15810,8 +15790,8 @@ declare namespace Office {
      * The compose mode of {@link Office.Item | Office.context.mailbox.item}.
      *
      * **Important**: This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * Child interfaces:
      *
@@ -15825,8 +15805,8 @@ declare namespace Office {
      * The read mode of {@link Office.Item | Office.context.mailbox.item}.
      *
      * **Important**: This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * Child interfaces:
      *
@@ -16098,18 +16078,30 @@ declare namespace Office {
         /**
          * Gets an attachment from a message or appointment and returns it as an `AttachmentContent` object.
          *
-         * The `getAttachmentContentAsync` method gets the attachment with the specified identifier from the item. As a best practice, you should get
-         * the attachment's identifier from a `getAttachmentsAsync` call, then in the same session, use that identifier to retrieve the attachment.
-         * In Outlook on the web and {@link https://support.microsoft.com/office/656bb8d9-5a60-49b2-a98b-ba7822bc7627 | new Outlook on Windows},
-         * the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing an inline form
-         * then subsequently pops out the form to continue in a separate window.
-         *
          * @remarks
          * [Api set: Mailbox 1.8]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
+         *
+         * **Important**:
+         *
+         * - The `getAttachmentContentAsync` method gets the attachment with the specified identifier from the item. As a best practice, you should get
+         * the attachment's identifier from a `getAttachmentsAsync` call, then in the same session, use that identifier to retrieve the attachment.
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on the web and the {@link https://support.microsoft.com/office/656bb8d9-5a60-49b2-a98b-ba7822bc7627 | new Outlook on Windows},
+         * `getAttachmentContentAsync` doesn't support attachments that were added using the **Upload and share** option.
+         *
+         * - In Outlook on the web, on mobile devices, and in the new Outlook on Windows, the attachment identifier is valid only within the same session.
+         * A session is over when the user closes the app, or if the user starts composing an inline form then subsequently pops out the form to
+         * continue in a separate window.
          *
          * **Errors**:
          *
@@ -16118,7 +16110,8 @@ declare namespace Office {
          *
          * - `InvalidAttachmentId`: The attachment identifier does not exist.
          *
-         * @param attachmentId - The identifier of the attachment you want to get.
+         * @param attachmentId - The identifier of the attachment you want to get. In Outlook on the web and the new Outlook on Windows, the temporary attachment ID that's
+         *                       locally generated for inline images that haven't been uploaded to the server yet are supported for the duration of the current compose session.
          * @param options - An object literal that contains one or more of the following properties:-
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
@@ -16129,18 +16122,30 @@ declare namespace Office {
         /**
          * Gets an attachment from a message or appointment and returns it as an `AttachmentContent` object.
          *
-         * The `getAttachmentContentAsync` method gets the attachment with the specified identifier from the item. As a best practice, you should get
-         * the attachment's identifier from a `getAttachmentsAsync` call, then in the same session, use that identifier to retrieve the attachment.
-         * In Outlook on the web and {@link https://support.microsoft.com/office/656bb8d9-5a60-49b2-a98b-ba7822bc7627 | new Outlook on Windows},
-         * the attachment identifier is valid only within the same session. A session is over when the user closes the app, or if the user starts composing an inline form
-         * then subsequently pops out the form to continue in a separate window.
-         *
          * @remarks
          * [Api set: Mailbox 1.8]
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
+         *
+         * **Important**:
+         *
+         * - The `getAttachmentContentAsync` method gets the attachment with the specified identifier from the item. As a best practice, you should get
+         * the attachment's identifier from a `getAttachmentsAsync` call, then in the same session, use that identifier to retrieve the attachment.
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on the web and the {@link https://support.microsoft.com/office/656bb8d9-5a60-49b2-a98b-ba7822bc7627 | new Outlook on Windows},
+         * `getAttachmentContentAsync` doesn't support attachments that were added using the **Upload and share** option.
+         *
+         * - In Outlook on the web, on mobile devices, and in the new Outlook on Windows, the attachment identifier is valid only within the same session.
+         * A session is over when the user closes the app, or if the user starts composing an inline form then subsequently pops out the form to
+         * continue in a separate window.
          *
          * **Errors**:
          *
@@ -16149,7 +16154,8 @@ declare namespace Office {
          *
          * - `InvalidAttachmentId`: The attachment identifier does not exist.
          *
-         * @param attachmentId - The identifier of the attachment you want to get.
+         * @param attachmentId - The identifier of the attachment you want to get. In Outlook on the web and the new Outlook on Windows, the temporary attachment ID that's
+         *                       locally generated for inline images that haven't been uploaded to the server yet are supported for the duration of the current compose session.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
          *                `asyncResult`, which is an `Office.AsyncResult` object. If the call fails, the `asyncResult.error` property will contain
          *                an error code with the reason for the failure.
@@ -16165,11 +16171,22 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
          *
+         * **Important**:
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on the web and the new Outlook on Windows, users can select the **Upload and share** option to upload an attachment to OneDrive and
+         * include a link to the file in the mail item. However, since only a link is included, `getAttachmentsAsync` doesn't return this attachment.
+         *
          * @param options - An object literal that contains one or more of the following properties:-
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
          *                 type `Office.AsyncResult`. If the call fails, the `asyncResult.error` property will contain an error code with the reason for
-         *                 the failure.
+         *                 the failure. If the call succeeds, an array of `AttachmentDetailsCompose` objects is returned in the `asyncResult.value` property.
          */
         getAttachmentsAsync(options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<AttachmentDetailsCompose[]>) => void): void;
         /**
@@ -16182,9 +16199,20 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
          *
+         * **Important**:
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on the web and the new Outlook on Windows, users can select the **Upload and share** option to upload an attachment to OneDrive and
+         * include a link to the file in the mail item. However, since only a link is included, `getAttachmentsAsync` doesn't return this attachment.
+         *
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
          *                 type `Office.AsyncResult`. If the call fails, the `asyncResult.error` property will contain an error code with the reason for
-         *                 the failure.
+         *                 the failure. If the call succeeds, an array of `AttachmentDetailsCompose` objects is returned in the `asyncResult.value` property.
          */
         getAttachmentsAsync(callback?: (asyncResult: Office.AsyncResult<AttachmentDetailsCompose[]>) => void): void;
         /**
@@ -16892,7 +16920,8 @@ declare namespace Office {
          * **Important**: 
          *
          * - The `from` and `sender` properties represent the same person unless the message is sent by a delegate with **Send on behalf** permissions.
-         * In this case, the `from` property returns the delegator's email address and the `sender` property returns the delegate's address. For information about mailbox delegation, see
+         * In this case, the `from` property returns the email address of the mailbox owner or shared mailbox, and the `sender` property returns the address of the delegate.
+         * If the delegate has both **Send on behalf** and **Send as** permissions, the **Send as** permission applies. For information about mailbox delegation, see
          * {@link https://learn.microsoft.com/exchange/recipients-in-exchange-online/manage-permissions-for-recipients | Manage permissions for recipients in Exchange Online}.
          *
          * - The `recipientType` property of the `EmailAddressDetails` object in the `from` property is undefined.
@@ -16908,8 +16937,13 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Read
          *
          * **Important**: In the **Sent Items** folder, the `internetMessageId` may not be available yet on recently sent items. In that case,
-         * consider using {@link https://learn.microsoft.com/office/dev/add-ins/outlook/web-services | Exchange Web Services} to get this
-         * {@link https://learn.microsoft.com/exchange/client-developer/web-service-reference/internetmessageid | property from the server}.
+         * consider using one of the following options depending on your Exchange environment.
+         *
+         * - For Exchange Online, use {@link https://learn.microsoft.com/office/dev/add-ins/outlook/microsoft-graph | Microsoft Graph} to get the
+         * {@link https://learn.microsoft.com/graph/api/resources/message | internetMessageId} property.
+         *
+         * - For Exchange Server (on-premises), use {@link https://learn.microsoft.com/office/dev/add-ins/outlook/web-services | Exchange Web Services} to get the
+         * {@link https://learn.microsoft.com/exchange/client-developer/web-service-reference/internetmessageid | InternetMessageId} property from the server.
          */
         internetMessageId: string;
         /**
@@ -17098,7 +17132,8 @@ declare namespace Office {
          * **Important**:
          *
          * - The `from` and `sender` properties represent the same person unless the message is sent by a delegate with **Send on behalf** permissions.
-         * In this case, the `from` property returns the delegator's email address and the `sender` property returns the delegate's address. For information about mailbox delegation, see
+         * In this case, the `from` property returns the email address of the mailbox owner or shared mailbox, and the `sender` property returns the address of the delegate.
+         * If the delegate has both **Send on behalf** and **Send as** permissions, the **Send as** permission applies. For information about mailbox delegation, see
          * {@link https://learn.microsoft.com/exchange/recipients-in-exchange-online/manage-permissions-for-recipients | Manage permissions for recipients in Exchange Online}.
          *
          * - The `recipientType` property of the `EmailAddressDetails` object in the `sender` property is undefined.
@@ -17966,10 +18001,7 @@ declare namespace Office {
         userProfile: UserProfile;
 
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Mailbox object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.5]
@@ -17977,6 +18009,17 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         *
+         * **Important**: The following events are supported on the `Mailbox` object.
+         *
+         * <table>
+         *  <tr><th>Event</th><th>Description</th><th>Minimum requirement set</th></tr>
+         *  <tr><td><code>DragAndDropEvent</code></td><td>A message or file attachment in the Outlook client window is dragged then dropped into the task pane of an add-in.
+         *   This event is only supported in Outlook on the web and the new Outlook on Windows.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>ItemChanged</code></td><td>A different Outlook item is selected for viewing while the task pane is pinned.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>OfficeThemeChanged</code></td><td>The OfficeTheme is changed in Outlook.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-14">1.14</a></td></tr>
+         *  <tr><td><code>SelectedItemsChanged</code></td><td>One or more messages are selected or deselected.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-13">1.13</a></td></tr>
+         * </table>
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -17987,10 +18030,7 @@ declare namespace Office {
          */
         addHandlerAsync(eventType: Office.EventType | string, handler: any, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Mailbox object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.5]
@@ -17998,6 +18038,17 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         *
+         * **Important**: The following events are supported on the `Mailbox` object.
+         *
+         * <table>
+         *  <tr><th>Event</th><th>Description</th><th>Minimum requirement set</th></tr>
+         *  <tr><td><code>DragAndDropEvent</code></td><td>A message or file attachment in the Outlook client window is dragged then dropped into the task pane of an add-in.
+         *   This event is only supported in Outlook on the web and the new Outlook on Windows.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>ItemChanged</code></td><td>A different Outlook item is selected for viewing while the task pane is pinned.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>OfficeThemeChanged</code></td><td>The OfficeTheme is changed in Outlook.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-14">1.14</a></td></tr>
+         *  <tr><td><code>SelectedItemsChanged</code></td><td>One or more messages are selected or deselected.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-13">1.13</a></td></tr>
+         * </table>
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -18385,39 +18436,9 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          *
-         * @param parameters - A dictionary containing all values to be filled in for the user in the new form. All parameters are optional.
-         *
-         *        `toRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **To** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `ccRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **Cc** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `bccRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **Bcc** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `subject`: A string containing the subject of the message. The string is limited to a maximum of 255 characters.
-         *
-         *        `htmlBody`: The HTML body of the message. The body content is limited to a maximum size of 32 KB.
-         *
-         *        `attachments`: An array of JSON objects that are either file or Exchange item attachments.
-         *
-         *        `attachments.type`: Indicates the type of attachment. Must be `Office.MailboxEnums.AttachmentType.File` for a file attachment or
-         *        `Office.MailboxEnums.AttachmentType.Item` for an Exchange item attachment.
-         *
-         *        `attachments.name`: A string that contains the name of the attachment, up to 255 characters in length.
-         *
-         *        `attachments.url`: Only used if the attachment type is set to `file`. The URI of the location for the file. **Important**: This link must be
-         *        publicly accessible, without need for authentication by Exchange Online servers. However, with on-premises Exchange, the link can
-         *        be accessible on a private network as long as it doesn't need further authentication.
-         *
-         *        `attachments.isInline`: Only used if the attachment type is set to `file`. If true, indicates that the attachment will be shown inline as an image
-         *        in the message body and won't be displayed in the attachment list.
-         *
-         *        `attachments.itemId`: Only used if the attachment type is set to `item`. The EWS item ID of the existing e-mail you want to attach to the new message.
-         *        This is a string up to 100 characters.
+         * @param parameters - A `MessageForm` object containing the content to be added to the new message form. All properties are optional.
          */
-        displayNewMessageForm(parameters: any): void;
+        displayNewMessageForm(parameters: MessageForm): void;
         /**
          * Displays a form for creating a new message.
          *
@@ -18433,43 +18454,13 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          *
-         * @param parameters - A dictionary containing all values to be filled in for the user in the new form. All parameters are optional.
-         *
-         *        `toRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **To** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `ccRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **Cc** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `bccRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **Bcc** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `subject`: A string containing the subject of the message. The string is limited to a maximum of 255 characters.
-         *
-         *        `htmlBody`: The HTML body of the message. The body content is limited to a maximum size of 32 KB.
-         *
-         *        `attachments`: An array of JSON objects that are either file or Exchange item attachments.
-         *
-         *        `attachments.type`: Indicates the type of attachment. Must be `Office.MailboxEnums.AttachmentType.File` for a file attachment or
-         *        `Office.MailboxEnums.AttachmentType.Item` for an Exchange item attachment.
-         *
-         *        `attachments.name`: A string that contains the name of the attachment, up to 255 characters in length.
-         *
-         *        `attachments.url`: Only used if the attachment type is set to `file`. The URI of the location for the file. **Important**: This link must be
-         *        publicly accessible, without need for authentication by Exchange Online servers. However, with on-premises Exchange, the link can
-         *        be accessible on a private network as long as it doesn't need further authentication.
-         *
-         *        `attachments.isInline`: Only used if the attachment type is set to `file`. If true, indicates that the attachment will be shown inline as an image
-         *        in the message body and won't be displayed in the attachment list.
-         *
-         *        `attachments.itemId`: Only used if the attachment type is set to `item`. The EWS item ID of the existing e-mail you want to attach to the new message.
-         *        This is a string up to 100 characters.
+         * @param parameters - A `MessageForm` object containing the content to be added to the new message form. All properties are optional.
          * @param options - An object literal that contains one or more of the following properties:-
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
          *                `asyncResult`, which is an `Office.AsyncResult` object.
          */
-        displayNewMessageFormAsync(parameters: any, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
+        displayNewMessageFormAsync(parameters: MessageForm, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
          * Displays a form for creating a new message.
          *
@@ -18485,41 +18476,11 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          *
-         * @param parameters - A dictionary containing all values to be filled in for the user in the new form. All parameters are optional.
-         *
-         *        `toRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **To** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `ccRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **Cc** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `bccRecipients`: An array of strings containing the email addresses or an array containing an {@link Office.EmailAddressDetails | EmailAddressDetails} object
-         *        for each of the recipients on the **Bcc** line. The array is limited to a maximum of 100 entries.
-         *
-         *        `subject`: A string containing the subject of the message. The string is limited to a maximum of 255 characters.
-         *
-         *        `htmlBody`: The HTML body of the message. The body content is limited to a maximum size of 32 KB.
-         *
-         *        `attachments`: An array of JSON objects that are either file or Exchange item attachments.
-         *
-         *        `attachments.type`: Indicates the type of attachment. Must be `Office.MailboxEnums.AttachmentType.File` for a file attachment or
-         *        `Office.MailboxEnums.AttachmentType.Item` for an Exchange item attachment.
-         *
-         *        `attachments.name`: A string that contains the name of the attachment, up to 255 characters in length.
-         *
-         *        `attachments.url`: Only used if the attachment type is set to `file`. The URI of the location for the file. **Important**: This link must be
-         *        publicly accessible, without need for authentication by Exchange Online servers. However, with on-premises Exchange, the link can
-         *        be accessible on a private network as long as it doesn't need further authentication.
-         *
-         *        `attachments.isInline`: Only used if the attachment type is set to `file`. If true, indicates that the attachment will be shown inline as an image
-         *        in the message body and won't be displayed in the attachment list.
-         *
-         *        `attachments.itemId`: Only used if the attachment type is set to `item`. The EWS item ID of the existing e-mail you want to attach to the new message.
-         *        This is a string up to 100 characters.
+         * @param parameters - A `MessageForm` object containing the content to be added to the new message form. All properties are optional.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
          *                `asyncResult`, which is an `Office.AsyncResult` object.
          */
-        displayNewMessageFormAsync(parameters: any, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
+        displayNewMessageFormAsync(parameters: MessageForm, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
          * Gets a string that contains a token used to call REST APIs or Exchange Web Services (EWS).
          *
@@ -18965,10 +18926,7 @@ declare namespace Office {
          */
         makeEwsRequestAsync(data: any, callback: (asyncResult: Office.AsyncResult<string>) => void, userContext?: any): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Mailbox object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.5]
@@ -18976,6 +18934,17 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         *
+         * **Important**: The following events are supported on the `Mailbox` object.
+         *
+         * <table>
+         *  <tr><th>Event</th><th>Description</th><th>Minimum requirement set</th></tr>
+         *  <tr><td><code>DragAndDropEvent</code></td><td>A message or file attachment in the Outlook client window is dragged then dropped into the task pane of an add-in.
+         *   This event is only supported in Outlook on the web and the new Outlook on Windows.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>ItemChanged</code></td><td>A different Outlook item is selected for viewing while the task pane is pinned.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>OfficeThemeChanged</code></td><td>The OfficeTheme is changed in Outlook.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-14">1.14</a></td></tr>
+         *  <tr><td><code>SelectedItemsChanged</code></td><td>One or more messages are selected or deselected.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-13">1.13</a></td></tr>
+         * </table>
          *
          * @param eventType - The event that should revoke the handler.
          * @param options - Provides an option for preserving context data of any type, unchanged, for use in a callback.
@@ -18984,10 +18953,7 @@ declare namespace Office {
          */
         removeHandlerAsync(eventType: Office.EventType | string, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Mailbox object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.5]
@@ -18995,6 +18961,17 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Compose or Read
+         *
+         * **Important**: The following events are supported on the `Mailbox` object.
+         *
+         * <table>
+         *  <tr><th>Event</th><th>Description</th><th>Minimum requirement set</th></tr>
+         *  <tr><td><code>DragAndDropEvent</code></td><td>A message or file attachment in the Outlook client window is dragged then dropped into the task pane of an add-in.
+         *   This event is only supported in Outlook on the web and the new Outlook on Windows.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>ItemChanged</code></td><td>A different Outlook item is selected for viewing while the task pane is pinned.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-5">1.5</a></td></tr>
+         *  <tr><td><code>OfficeThemeChanged</code></td><td>The OfficeTheme is changed in Outlook.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-14">1.14</a></td></tr>
+         *  <tr><td><code>SelectedItemsChanged</code></td><td>One or more messages are selected or deselected.</td><td><a href="https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-requirement-set-1-13">1.13</a></td></tr>
+         * </table>
          *
          * @param eventType - The event that should revoke the handler.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
@@ -19272,8 +19249,8 @@ declare namespace Office {
      * A subclass of {@link Office.Item | Item} for messages.
      *
      * **Important**: This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * Child interfaces:
      *
@@ -19289,8 +19266,8 @@ declare namespace Office {
      * **Important**:
      *
      * - This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * - When calling `Office.context.mailbox.item` on a message, note that the Reading Pane in the Outlook client must be turned on.
      * For guidance on how to configure the Reading Pane, see
@@ -19566,6 +19543,12 @@ declare namespace Office {
          * - This method isn't supported in Outlook on iOS or Android. For more information on supported APIs in Outlook mobile, see
          * {@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-mobile-apis | Outlook JavaScript APIs supported in Outlook on mobile devices}.
          *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID in the `id` property and their `isServiceAccessible` property is set to `true`.
+         * The temporary attachment ID is only supported for the duration of the current compose session. For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
          * - Bitmap (BMP) images aren't supported if they're added as inline attachments.
          *
          * - In recent builds of classic Outlook on Windows, a bug was introduced that incorrectly appends an `Authorization: Bearer` header to
@@ -19592,9 +19575,10 @@ declare namespace Office {
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          *        `isInline`: If true, indicates that the attachment will be shown inline as an image in the message body and won't be displayed in the attachment list.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
-         *                 type `Office.AsyncResult`. On success, the attachment identifier will be provided in the `asyncResult.value` property.
-         *                 If uploading the attachment fails, the `asyncResult` object will contain an `Error` object that provides a description of
-         *                 the error.
+         *                 type `Office.AsyncResult`. On success, the attachment identifier is provided in the `asyncResult.value` property. The identifier varies depending on the Outlook client.
+         *                 In Outlook on the web and the new Outlook on Windows, the Exchange Web Services (EWS) ID is returned. If `isInline` is set to `true`, a temporary attachment ID prefixed with
+         *                 `addinId` is initially returned while the attachment is uploaded to the server. Once the upload completes, the attachment is then assigned an EWS ID. For details, see the notes in the Remarks section.
+         *                 In Outlook on Windows (classic) and on Mac, the index of the attachment is returned for inline and non-inline attachments. If uploading the attachment fails, a description of the error is provided in `asyncResult.error`.
          */
         addFileAttachmentAsync(uri: string, attachmentName: string, options: Office.AsyncContextOptions & { isInline: boolean }, callback?: (asyncResult: Office.AsyncResult<string>) => void): void;
         /**
@@ -19613,6 +19597,12 @@ declare namespace Office {
          *
          * - This method isn't supported in Outlook on iOS or Android. For more information on supported APIs in Outlook mobile, see
          * {@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-mobile-apis | Outlook JavaScript APIs supported in Outlook on mobile devices}.
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID in the `id` property and their `isServiceAccessible` property is set to `true`.
+         * The temporary attachment ID is only supported for the duration of the current compose session. For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
          *
          * - Bitmap (BMP) images aren't supported if they're added as inline attachments.
          *
@@ -19637,9 +19627,10 @@ declare namespace Office {
          * @param uri - The URI that provides the location of the file to attach to the message or appointment. The maximum length is 2048 characters.
          * @param attachmentName - The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
-         *                 type `Office.AsyncResult`. On success, the attachment identifier will be provided in the `asyncResult.value` property.
-         *                 If uploading the attachment fails, the `asyncResult` object will contain an `Error` object that provides a description of
-         *                 the error.
+         *                 type `Office.AsyncResult`. On success, the attachment identifier is provided in the `asyncResult.value` property. The identifier varies depending on the Outlook client.
+         *                 In Outlook on the web and the new Outlook on Windows, the Exchange Web Services (EWS) ID is returned. If `isInline` is set to `true`, a temporary attachment ID prefixed with
+         *                 `addinId` is initially returned while the attachment is uploaded to the server. Once the upload completes, the attachment is then assigned an EWS ID. For details, see the notes in the Remarks section.
+         *                 In Outlook on Windows (classic) and on Mac, the index of the attachment is returned for inline and non-inline attachments. If uploading the attachment fails, a description of the error is provided in `asyncResult.error`.
          */
         addFileAttachmentAsync(uri: string, attachmentName: string, callback?: (asyncResult: Office.AsyncResult<string>) => void): void;
         /**
@@ -19662,6 +19653,12 @@ declare namespace Office {
          * - Adding an inline Base64 file to a message in compose mode is supported in Outlook on Android and on iOS. For more information on supported APIs in
          * Outlook mobile, see {@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-mobile-apis | Outlook JavaScript APIs supported in Outlook on mobile devices}.
          *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
          * - If you're using a data URL API (for example, `readAsDataURL`), you need to strip out the data URL prefix, then send the rest of the string to this API.
          * For example, if the full string is represented by `data:image/svg+xml;base64,<rest of Base64 string>`, remove `data:image/svg+xml;base64,`.
          *
@@ -19685,9 +19682,11 @@ declare namespace Office {
          * @param options - An object literal that contains one or more of the following properties:-
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          *        `isInline`: If true, indicates that the attachment will be shown inline as an image in the message body and won't be displayed in the attachment list.
-         * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
-         *                             type Office.AsyncResult. On success, the attachment identifier will be provided in the `asyncResult.value` property.
-         *                  If uploading the attachment fails, the `asyncResult` object will contain an `Error` object that provides a description of the error.
+         * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of type `Office.AsyncResult`.
+         *                 On success, the attachment identifier is provided in the `asyncResult.value` property. The identifier varies depending on the Outlook client.
+         *                 In Outlook on the web and the new Outlook on Windows, the Exchange Web Services (EWS) ID is returned. If `isInline` is set to `true`, a temporary attachment ID prefixed with
+         *                 `addinId` is initially returned while the attachment is uploaded to the server. Once the upload completes, the attachment is then assigned an EWS ID. For details, see the notes in the Remarks section.
+         *                 In Outlook on Windows (classic) and on Mac, the index of the attachment is returned for inline and non-inline attachments. If uploading the attachment fails, a description of the error is provided in `asyncResult.error`.
          */
         addFileAttachmentFromBase64Async(base64File: string, attachmentName: string, options: Office.AsyncContextOptions & { isInline: boolean }, callback?: (asyncResult: Office.AsyncResult<string>) => void): void;
         /**
@@ -19710,6 +19709,12 @@ declare namespace Office {
          * - Adding an inline Base64 file to a message in compose mode is supported in Outlook on Android and on iOS. For more information on supported APIs in
          * Outlook mobile, see {@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-mobile-apis | Outlook JavaScript APIs supported in Outlook on mobile devices}.
          *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
          * - If you're using a data URL API (for example, `readAsDataURL`), you need to strip out the data URL prefix, then send the rest of the string to this API.
          * For example, if the full string is represented by `data:image/svg+xml;base64,<rest of Base64 string>`, remove `data:image/svg+xml;base64,`.
          *
@@ -19730,16 +19735,15 @@ declare namespace Office {
          *
          * @param base64File - The Base64-encoded content of an image or file to be added to an email or event. The maximum length of the encoded string is 27,892,122 characters (about 25 MB).
          * @param attachmentName - The name of the attachment that is shown while the attachment is uploading. The maximum length is 255 characters.
-         * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
-         *                             type Office.AsyncResult. On success, the attachment identifier will be provided in the `asyncResult.value` property.
-         *                  If uploading the attachment fails, the `asyncResult` object will contain an `Error` object that provides a description of the error.
+         * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of type `Office.AsyncResult`.
+         *                 On success, the attachment identifier is provided in the `asyncResult.value` property. The identifier varies depending on the Outlook client.
+         *                 In Outlook on the web and the new Outlook on Windows, the Exchange Web Services (EWS) ID is returned. If `isInline` is set to `true`, a temporary attachment ID prefixed with
+         *                 `addinId` is initially returned while the attachment is uploaded to the server. Once the upload completes, the attachment is then assigned an EWS ID. For details, see the notes in the Remarks section.
+         *                 In Outlook on Windows (classic) and on Mac, the index of the attachment is returned for inline and non-inline attachments. If uploading the attachment fails, a description of the error is provided in `asyncResult.error`.
          */
         addFileAttachmentFromBase64Async(base64File: string, attachmentName: string, callback?: (asyncResult: Office.AsyncResult<string>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -19747,6 +19751,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -19758,10 +19764,7 @@ declare namespace Office {
          */
         addHandlerAsync(eventType: Office.EventType | string, handler: any, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -19769,6 +19772,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -20017,6 +20022,12 @@ declare namespace Office {
          * - The `getAttachmentContentAsync` method gets the attachment with the specified identifier from the item. As a best practice, you should get
          * the attachment's identifier from a `getAttachmentsAsync` call, then in the same session, use that identifier to retrieve the attachment.
          *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
          * - In Outlook on the web and the {@link https://support.microsoft.com/office/656bb8d9-5a60-49b2-a98b-ba7822bc7627 | new Outlook on Windows},
          * `getAttachmentContentAsync` doesn't support attachments that were added using the **Upload and share** option.
          *
@@ -20031,7 +20042,8 @@ declare namespace Office {
          *
          * - `InvalidAttachmentId`: The attachment identifier does not exist.
          *
-         * @param attachmentId - The identifier of the attachment you want to get.
+         * @param attachmentId - The identifier of the attachment you want to get. In Outlook on the web and the new Outlook on Windows, the temporary attachment ID that's
+         *                       locally generated for inline images that haven't been uploaded to the server yet are supported for the duration of the current compose session.
          * @param options - An object literal that contains one or more of the following properties:-
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
@@ -20054,6 +20066,12 @@ declare namespace Office {
          * - The `getAttachmentContentAsync` method gets the attachment with the specified identifier from the item. As a best practice, you should get
          * the attachment's identifier from a `getAttachmentsAsync` call, then in the same session, use that identifier to retrieve the attachment.
          *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
          * - In Outlook on the web and the {@link https://support.microsoft.com/office/656bb8d9-5a60-49b2-a98b-ba7822bc7627 | new Outlook on Windows},
          * `getAttachmentContentAsync` doesn't support attachments that were added using the **Upload and share** option.
          *
@@ -20068,7 +20086,8 @@ declare namespace Office {
          *
          * - `InvalidAttachmentId`: The attachment identifier does not exist.
          *
-         * @param attachmentId - The identifier of the attachment you want to get.
+         * @param attachmentId - The identifier of the attachment you want to get. In Outlook on the web and the new Outlook on Windows, the temporary attachment ID that's
+         *                       locally generated for inline images that haven't been uploaded to the server yet are supported for the duration of the current compose session.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
          *                `asyncResult`, which is an `Office.AsyncResult` object. If the call fails, the `asyncResult.error` property will contain
          *                an error code with the reason for the failure.
@@ -20084,14 +20103,22 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
          *
-         * **Important**: In Outlook on the web and the new Outlook on Windows, users can select the **Upload and share** option to upload an attachment to OneDrive and
+         * **Important**:
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on the web and the new Outlook on Windows, users can select the **Upload and share** option to upload an attachment to OneDrive and
          * include a link to the file in the mail item. However, since only a link is included, `getAttachmentsAsync` doesn't return this attachment.
          *
          * @param options - An object literal that contains one or more of the following properties:-
          *        `asyncContext`: Developers can provide any object they wish to access in the callback function.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
          *                 type `Office.AsyncResult`. If the call fails, the `asyncResult.error` property will contain an error code with the reason for
-         *                 the failure.
+         *                 the failure. If the call succeeds, an array of `AttachmentDetailsCompose` objects is returned in the `asyncResult.value` property.
          */
         getAttachmentsAsync(options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<AttachmentDetailsCompose[]>) => void): void;
         /**
@@ -20104,12 +20131,20 @@ declare namespace Office {
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
          *
-         * **Important**: In Outlook on the web and the new Outlook on Windows, users can select the **Upload and share** option to upload an attachment to OneDrive and
+         * **Important**:
+         *
+         * - Starting March 30, 2026, after the call to `addFileAttachmentAsync` or `addFileAttachmentFromBase64Async` with `isInline` set to `true` completes, inline images in messages in Outlook on the web and the new Outlook on Windows
+         * are locally assigned a temporary attachment ID while they're uploaded to the server. A temporary attachment ID is prefixed with `addinId`. Once the images are
+         * uploaded to the server, they are then assigned an Exchange Web Services (EWS) ID. The temporary attachment ID is only supported for the duration of the current compose session.
+         * For more information on the changes to how inline images are handled, see
+         * {@link https://devblogs.microsoft.com/microsoft365dev/changes-to-attachment-ids-for-inline-images-in-outlook-add-ins/ | Changes to attachment IDs for inline images in Outlook add-ins}.
+         *
+         * - In Outlook on the web and the new Outlook on Windows, users can select the **Upload and share** option to upload an attachment to OneDrive and
          * include a link to the file in the mail item. However, since only a link is included, `getAttachmentsAsync` doesn't return this attachment.
          *
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter of
          *                 type `Office.AsyncResult`. If the call fails, the `asyncResult.error` property will contain an error code with the reason for
-         *                 the failure.
+         *                 the failure. If the call succeeds, an array of `AttachmentDetailsCompose` objects is returned in the `asyncResult.value` property.
          */
         getAttachmentsAsync(callback?: (asyncResult: Office.AsyncResult<AttachmentDetailsCompose[]>) => void): void;
         /**
@@ -20679,10 +20714,7 @@ declare namespace Office {
          */
         removeAttachmentAsync(attachmentId: string, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -20690,6 +20722,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param options - An object literal that contains one or more of the following properties:-
@@ -20699,10 +20733,7 @@ declare namespace Office {
          */
         removeHandlerAsync(eventType: Office.EventType | string, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -20710,6 +20741,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Compose
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
@@ -20928,13 +20961,189 @@ declare namespace Office {
         setSelectedDataAsync(data: string, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
     }
     /**
+     * Represents the details of the form for composing a new message.
+     *
+     * @remarks
+     *
+     * [Api set: Mailbox 1.6]
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+     */
+    interface MessageForm {
+        /**
+         * Sets the attachments of the message. An attachment must be a file attachment (`Office.MailboxEnums.AttachmentType.File`) or an Outlook item attachment
+         * (`Office.MailboxEnums.AttachmentType.Item`).
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         */
+        attachments?: MessageFormAttachment[];
+        /**
+         * Sets the recipients in the Bcc field of the message.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The `bccRecipients` array is limited to a maximum of 100 recipients.
+         */
+        bccRecipients?: string[] | EmailAddressDetails[];
+        /**
+         * Sets the recipients in the Cc field of the message.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The `ccRecipients` array is limited to a maximum of 100 recipients.
+         */
+        ccRecipients?: string[] | EmailAddressDetails[];
+        /**
+         * Sets the body of the message.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The body content is limited to a maximum size of 32 KB.
+         */
+        htmlBody?: string;
+        /**
+         * Sets the subject of the message.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The subject is limited to a maximum of 255 characters.
+         */
+        subject?: string;
+        /**
+         * Sets the recipients in the To field of the message.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The `toRecipients` array is limited to a maximum of 100 recipients.
+         */
+        toRecipients?: string[] | EmailAddressDetails[];
+    }
+    /**
+     * A file or Outlook item attachment. Used when displaying a new message form.
+     *
+     * @remarks
+     *
+     * [Api set: Mailbox 1.6]
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+     */
+    interface MessageFormAttachment {
+        /**
+         * The type of attachment. Must be `Office.MailboxEnums.AttachmentType.File` or `Office.MailboxEnums.AttachmentType.Item`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The `base64` and `cloud` attachment types aren't supported.
+         */
+        type: MailboxEnums.AttachmentType | string;
+        /**
+         * The name of the attachment. The name can be up to 255 characters in length.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         */
+        name: string;
+        /**
+         * The URI of the location for the file. Only specify if the `type` property is set to `Office.MailboxEnums.AttachmentType.File`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         *
+         * **Important**: The link must be publicly accessible without need for authentication by Exchange Online servers. However, with
+         * on-premises Exchange, the link can be accessible on a private network as long as it doesn't need further authentication.
+         */
+        url?: string;
+        /**
+         * If true, indicates that the attachment will be shown inline in the message body and won't be displayed in the attachment list.
+         * Only specify if the `type` property is set to `Office.MailboxEnums.AttachmentType.File`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         */
+        isInline?: boolean;
+        /**
+         * The Exchange Web Services (EWS) item ID of the attachment. The item ID is a string of up to 100 characters.
+         * Only specify if the `type` property is set to `Office.MailboxEnums.AttachmentType.Item`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.6]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
+         */
+        itemId?: string;
+    }
+    /**
      * The message read mode of {@link Office.Item | Office.context.mailbox.item}.
      *
      * **Important**:
      *
      * - This is an internal Outlook object, not directly exposed through existing interfaces.
-     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to the
-     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item | Object Model} page.
+     * You should treat this as a mode of `Office.context.mailbox.item`. For more information, refer to
+     * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model | Outlook Item object model}.
      *
      * - When calling `Office.context.mailbox.item` on a message, note that the Reading Pane in the Outlook client must be turned on.
      * For guidance on how to configure the Reading Pane, see
@@ -21081,7 +21290,8 @@ declare namespace Office {
          * **Important**: 
          *
          * - The `from` and `sender` properties represent the same person unless the message is sent by a delegate with **Send on behalf** permissions.
-         * In this case, the `from` property returns the delegator's email address and the `sender` property returns the delegate's address. For information about mailbox delegation, see
+         * In this case, the `from` property returns the email address of the mailbox owner or shared mailbox, and the `sender` property returns the address of the delegate.
+         * If the delegate has both **Send on behalf** and **Send as** permissions, the **Send as** permission applies. For information about mailbox delegation, see
          * {@link https://learn.microsoft.com/exchange/recipients-in-exchange-online/manage-permissions-for-recipients | Manage permissions for recipients in Exchange Online}.
          *
          * - The `recipientType` property of the `EmailAddressDetails` object in the `from` property is undefined.
@@ -21090,15 +21300,20 @@ declare namespace Office {
         /**
          * Gets the internet message identifier for an email message.
          *
-         * **Important**: In the **Sent Items** folder, the `internetMessageId` may not be available yet on recently sent items. In that case,
-         * consider using {@link https://learn.microsoft.com/office/dev/add-ins/outlook/web-services | Exchange Web Services} to get this
-         * {@link https://learn.microsoft.com/exchange/client-developer/web-service-reference/internetmessageid | property from the server}.
-         *
          * @remarks
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Read
+         *
+         * **Important**: In the **Sent Items** folder, the `internetMessageId` may not be available yet on recently sent items. In that case,
+         * consider using one of the following options depending on your Exchange environment.
+         *
+         * - For Exchange Online, use {@link https://learn.microsoft.com/office/dev/add-ins/outlook/microsoft-graph | Microsoft Graph} to get the
+         * {@link https://learn.microsoft.com/graph/api/resources/message | internetMessageId} property.
+         *
+         * - For Exchange Server (on-premises), use {@link https://learn.microsoft.com/office/dev/add-ins/outlook/web-services | Exchange Web Services} to get the
+         * {@link https://learn.microsoft.com/exchange/client-developer/web-service-reference/internetmessageid | InternetMessageId} property from the server.
          */
         internetMessageId: string;
         /**
@@ -21276,7 +21491,8 @@ declare namespace Office {
          * **Important**:
          *
          * - The `from` and `sender` properties represent the same person unless the message is sent by a delegate with **Send on behalf** permissions.
-         * In this case, the `from` property returns the delegator's email address and the `sender` property returns the delegate's address. For information about mailbox delegation, see
+         * In this case, the `from` property returns the email address of the mailbox owner or shared mailbox, and the `sender` property returns the address of the delegate.
+         * If the delegate has both **Send on behalf** and **Send as** permissions, the **Send as** permission applies. For information about mailbox delegation, see
          * {@link https://learn.microsoft.com/exchange/recipients-in-exchange-online/manage-permissions-for-recipients | Manage permissions for recipients in Exchange Online}.
          *
          * - The `recipientType` property of the `EmailAddressDetails` object in the `sender` property is undefined.
@@ -21332,10 +21548,7 @@ declare namespace Office {
          */
         to: EmailAddressDetails[];
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -21343,6 +21556,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Read
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -21354,10 +21569,7 @@ declare namespace Office {
          */
         addHandlerAsync(eventType: Office.EventType | string, handler: any, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Adds an event handler for a supported event. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Adds an event handler for a supported event. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -21365,6 +21577,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Read
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should invoke the handler.
          * @param handler - The function to handle the event. The function must accept a single parameter, which is an object literal.
@@ -21991,10 +22205,7 @@ declare namespace Office {
          */
         loadCustomPropertiesAsync(callback: (asyncResult: Office.AsyncResult<CustomProperties>) => void, userContext?: any): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -22002,6 +22213,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Read
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param options - An object literal that contains one or more of the following properties:-
@@ -22011,10 +22224,7 @@ declare namespace Office {
          */
         removeHandlerAsync(eventType: Office.EventType | string, options: Office.AsyncContextOptions, callback?: (asyncResult: Office.AsyncResult<void>) => void): void;
         /**
-         * Removes the event handlers for a supported event type. **Note**: Events are only available with task pane implementation.
-         *
-         * For supported events, refer to the Item object model
-         * {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/requirement-set-1.15/office.context.mailbox.item#events | events section}.
+         * Removes the event handlers for a supported event type. Events are only available in task pane add-ins.
          *
          * @remarks
          * [Api set: Mailbox 1.7]
@@ -22022,6 +22232,8 @@ declare namespace Office {
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
          *
          * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Message Read
+         *
+         * **Important**: For a list of events supported on a mail item, see {@link https://learn.microsoft.com/javascript/api/requirement-sets/outlook/outlook-item-object-model#events | Outlook Item object model}.
          *
          * @param eventType - The event that should revoke the handler.
          * @param callback - Optional. When the method completes, the function passed in the `callback` parameter is called with a single parameter,
@@ -23121,12 +23333,26 @@ declare namespace Office {
     }
     /**
      * A file or item attachment. Used when displaying a reply form.
+     *
+     * @remarks
+     *
+     * [Api set: Mailbox 1.1]
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
      */
     interface ReplyFormAttachment {
         /**
          * Indicates the type of attachment.
          *
          * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          *
          * **Important**:
          *
@@ -23139,10 +23365,26 @@ declare namespace Office {
         type: MailboxEnums.AttachmentType;
         /**
          * A string that contains the name of the attachment, up to 255 characters in length.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         name: string;
         /**
          * The URI of the location for the file. Only use if `type` is set to `file`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          *
          * **Important**: This link must be publicly accessible without need for authentication by Exchange Online servers. However, with
          * on-premises Exchange, the link can be accessible on a private network as long as it doesn't need further authentication.
@@ -23151,10 +23393,26 @@ declare namespace Office {
         /**
          * If true, indicates that the attachment will be shown inline in the message body and shouldn't be displayed in the attachment list.
          * Only use if `type` is set to `base64` or `file`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         inLine?: boolean;
         /**
          * The EWS item ID of the attachment. This is a string up to 100 characters. Only use if `type` is set to `item`.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         itemId?: string;
         /**
@@ -23163,29 +23421,72 @@ declare namespace Office {
          * @remarks
          *
          * [Api set: Mailbox 1.15]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read 
          */
         base64file?: string;
     }
     /**
      * A ReplyFormData object that contains body or attachment data and a callback function. Used when displaying a reply form.
+     *
+     * @remarks
+     *
+     * [Api set: Mailbox 1.1]
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+     *
+     * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
      */
     interface ReplyFormData {
         /**
          * A string that contains text and HTML and that represents the body of the reply form. The string is limited to 32 KB.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         htmlBody?: string;
         /**
          * An array of {@link Office.ReplyFormAttachment | ReplyFormAttachment} that are Base64-encoded files, Exchange items, or file attachments.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.2]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         attachments?: ReplyFormAttachment[];
         /**
          * When the reply display call completes, the function passed in the callback parameter is called with a single parameter,
          * `asyncResult`, which is an `Office.AsyncResult` object.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         callback?: (asyncResult: Office.AsyncResult<any>) => void;
         /**
-         * An object literal that contains the following property:-
-         * `asyncContext`: Developers can provide any object they wish to access in the callback function.
+         * An object literal that contains the `asyncContext` property. Use the `asyncContext` property to specify any object that you want to access in the callback function.
+         *
+         * @remarks
+         *
+         * [Api set: Mailbox 1.1]
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/understanding-outlook-add-in-permissions | Minimum permission level}**: **read item**
+         *
+         * **{@link https://learn.microsoft.com/office/dev/add-ins/outlook/outlook-add-ins-overview#extension-points | Applicable Outlook mode}**: Read
          */
         options?: Office.AsyncContextOptions;
     }
@@ -34849,6 +35150,9 @@ declare namespace Excel {
     interface WorksheetFormulaChangedEventArgs {
         /**
          * Gets an array of `FormulaChangedEventDetail` objects, which contain the details about the all of the changed formulas.
+                    
+                     If the number of changed formulas or the size of the changed formula text exceeds a size limit, `formulaDetails`
+                     returns undefined. This indicates that something on the sheet has changed, but the details cannot be reported.
          *
          * @remarks
          * [Api set: ExcelApi 1.13]
@@ -35777,6 +36081,7 @@ declare namespace Excel {
         readonly calculationEngineVersion: number;
         /**
          * Returns the calculation mode used in the workbook, as defined by the constants in `Excel.CalculationMode`. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
+         * This is a runtime property. The `calculationMode` setting is not persisted in the workbook.
          *
          * @remarks
          * [Api set: ExcelApi 1.1 for get, 1.8 for set]
@@ -36330,13 +36635,12 @@ declare namespace Excel {
          * Inserts the specified worksheets from a source workbook into the current workbook.
                     
                      The `extensionHardening` Windows registry key affects this API. The file extension defined by the `base64File` param must match the real file type of the inserted file. If `extensionHardening` is set to deny mismatches and the file extension does not match the real file type, this API throws the following error: "This operation is not allowed due to the extension hardening policy."
-                     
-                     **Note**: This API is currently only supported for Office on Windows, Mac, and the web.
          *
          * @remarks
          * [Api set: ExcelApi 1.13]
          * 
          * This API is currently only supported for Office on Windows, Mac, and the web.
+         * In Excel on the web, this API doesn't support inserting charts, comments, PivotTables, or slicers.
          *
          * @param base64File Required. The Base64-encoded string representing the source workbook file.
          * @param options Optional. The options that define which worksheets to insert and where in the workbook the new worksheets will be inserted. By default, all the worksheets from the source workbook are inserted at the end of the current workbook.
@@ -36796,6 +37100,7 @@ declare namespace Excel {
         evaluate(name: string): OfficeExtension.ClientResult<any>;
         /**
          * Finds all occurrences of the given string based on the criteria specified and returns them as a `RangeAreas` object, comprising one or more rectangular ranges.
+         * Content in hidden worksheets is not returned.
          *
          * @remarks
          * [Api set: ExcelApi 1.9]
@@ -36807,6 +37112,7 @@ declare namespace Excel {
         findAll(text: string, criteria: Excel.WorksheetSearchCriteria): Excel.RangeAreas;
         /**
          * Finds all occurrences of the given string based on the criteria specified and returns them as a `RangeAreas` object, comprising one or more rectangular ranges.
+         * Content in hidden worksheets is not returned.
          *
          * @remarks
          * [Api set: ExcelApi 1.9]
@@ -37021,6 +37327,9 @@ declare namespace Excel {
         readonly onFormatChanged: OfficeExtension.EventHandlers<Excel.WorksheetFormatChangedEventArgs>;
         /**
          * Occurs when one or more formulas are changed in this worksheet. This event is for when the formula itself changes, not the data value resulting from the formula's calculation.
+
+                     The event is only triggered when the cell already contains a formula.
+                     The new cell value may not include a formula. This event is not triggered when a formula is entered into a cell that did not previously contain a formula.
          *
          * @remarks
          * [Api set: ExcelApi 1.13]
@@ -38008,6 +38317,7 @@ declare namespace Excel {
         /**
          * Represents the raw values of the specified range. The data returned could be a string, number, or Boolean. Cells that contain an error will return the error string.
                     If the returned value starts with a plus ("+"), minus ("-"), or equal sign ("="), Excel interprets this value as a formula.
+                    Locale-shaped strings (such as the date "19-8-2025" in nl-NL or fr-FR, format DD-MM-YYYY) are stored as text instead of as dates. To ensure dates are stored as dates, use a locale-aware API like `formulasLocal` or use a locale-neutral format like ISO (YYYY-MM-DD) or a numeric date serial.
          *
          * @remarks
          * [Api set: ExcelApi 1.1]
@@ -69436,6 +69746,7 @@ declare namespace Excel {
             iterativeCalculation?: Excel.Interfaces.IterativeCalculationUpdateData;
             /**
              * Returns the calculation mode used in the workbook, as defined by the constants in `Excel.CalculationMode`. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
+             * This is a runtime property. The `calculationMode` setting is not persisted in the workbook.
              *
              * @remarks
              * [Api set: ExcelApi 1.1 for get, 1.8 for set]
@@ -74973,6 +75284,7 @@ declare namespace Excel {
             calculationEngineVersion?: number;
             /**
              * Returns the calculation mode used in the workbook, as defined by the constants in `Excel.CalculationMode`. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
+             * This is a runtime property. The `calculationMode` setting is not persisted in the workbook.
              *
              * @remarks
              * [Api set: ExcelApi 1.1 for get, 1.8 for set]
@@ -82526,6 +82838,7 @@ declare namespace Excel {
             calculationEngineVersion?: boolean;
             /**
              * Returns the calculation mode used in the workbook, as defined by the constants in `Excel.CalculationMode`. Possible values are: `Automatic`, where Excel controls recalculation; `AutomaticExceptTables`, where Excel controls recalculation but ignores changes in tables; `Manual`, where calculation is done when the user requests it.
+             * This is a runtime property. The `calculationMode` setting is not persisted in the workbook.
              *
              * @remarks
              * [Api set: ExcelApi 1.1 for get, 1.8 for set]
@@ -97819,12 +98132,12 @@ declare namespace Word {
         /** Sets multiple properties on the object at the same time, based on an existing loaded object. */
         set(properties: Word.CommentContentRange): void;
         /**
-         * Inserts text into at the specified location. **Note**: For the modern comment, the content range tracked across context turns to empty if any revision to the comment is posted through the UI.
+         * Inserts text at the specified location. **Note**: For the modern comment, the content range tracked across context turns to empty if any revision to the comment is posted through the UI.
          *
          * @remarks
          * [Api set: WordApi 1.4]
          *
-         * @param text The text to be inserted in to the `CommentContentRange`.
+         * @param text The text to be inserted into the `CommentContentRange` object.
          * @param insertLocation The value must be `replace`, `start`, `end`, `before`, or `after`.
          */
         insertText(text: string, insertLocation: Word.InsertLocation | "Replace" | "Start" | "End" | "Before" | "After"): Word.CommentContentRange;
@@ -99227,14 +99540,14 @@ declare namespace Word {
          */
         appearance: Word.ContentControlAppearance | "BoundingBox" | "Tags" | "Hidden";
         /**
-         * Specifies a value that indicates whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
+         * Specifies whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
          *
          * @remarks
          * [Api set: WordApi 1.1]
          */
         cannotDelete: boolean;
         /**
-         * Specifies a value that indicates whether the user can edit the contents of the content control.
+         * Specifies whether the user can edit the contents of the content control.
          *
          * @remarks
          * [Api set: WordApi 1.1]
@@ -99262,7 +99575,7 @@ declare namespace Word {
          */
         placeholderText: string;
         /**
-         * Specifies a value that indicates whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
+         * Specifies whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
          *
          * @remarks
          * [Api set: WordApi 1.1]
@@ -100154,7 +100467,7 @@ declare namespace Word {
          */
         schemaCollection: Word.CustomXmlSchemaCollection;
         /**
-         * Gets a value that indicates whether the `CustomXmlPart` is built-in.
+         * Gets whether the `CustomXmlPart` is built-in.
          *
          * @remarks
          * [Api set: WordApiDesktop 1.3]
@@ -104313,7 +104626,7 @@ declare namespace Word {
          */
         readonly imageFormat: Word.ImageFormat | "Unsupported" | "Undefined" | "Bmp" | "Jpeg" | "Gif" | "Tiff" | "Png" | "Icon" | "Exif" | "Wmf" | "Emf" | "Pict" | "Pdf" | "Svg";
         /**
-         * Specifies a value that indicates whether the inline image retains its original proportions when you resize it.
+         * Specifies whether the inline image retains its original proportions when you resize it.
          *
          * @remarks
          * [Api set: WordApi 1.1]
@@ -135190,7 +135503,7 @@ declare namespace Word {
      */
     interface SelectionInsertSymbolOptions {
         /**
-         * If provided, specifies the font bias for symbols. This argument is useful for setting the correct font bias for East Asian characters. The default value is `default`.
+         * If provided, specifies the font bias for symbols. This argument is useful for setting the correct font bias for East Asian characters. The default value is `standard`.
          *
          * @remarks
          * [Api set: WordApiDesktop 1.4]
@@ -135314,7 +135627,7 @@ declare namespace Word {
         unit?: Word.OperationUnit | "Character" | "Word" | "Sentence" | "Paragraph" | "Line" | "Story" | "Screen" | "Section" | "Column" | "Row" | "Window" | "Cell" | "CharacterFormat" | "ParagraphFormat" | "Table" | "Item";
     }
     /**
-     * Represents the options for the {@link Word.Selection | Selection.next} method.
+     * Represents the options for the {@link Word.Selection | Selection.getNextRange} method.
      *
      * @remarks
      * [Api set: WordApiDesktop 1.4]
@@ -135336,7 +135649,7 @@ declare namespace Word {
         unit?: Word.OperationUnit | "Character" | "Word" | "Sentence" | "Paragraph" | "Line" | "Story" | "Screen" | "Section" | "Column" | "Row" | "Window" | "Cell" | "CharacterFormat" | "ParagraphFormat" | "Table" | "Item";
     }
     /**
-     * Represents the options for the {@link Word.Selection | Selection.previous} method.
+     * Represents the options for the {@link Word.Selection | Selection.getPreviousRange} method.
      *
      * @remarks
      * [Api set: WordApiDesktop 1.4]
@@ -139955,7 +140268,7 @@ declare namespace Word {
         /** An interface for updating data on the `CommentContentRange` object, for use in `commentContentRange.set({ ... })`. */
         interface CommentContentRangeUpdateData {
             /**
-             * Specifies a value that indicates whether the comment text is bold.
+             * Specifies whether the comment text is bold.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -139969,21 +140282,21 @@ declare namespace Word {
              */
             hyperlink?: string;
             /**
-             * Specifies a value that indicates whether the comment text is italicized.
+             * Specifies whether the comment text is italicized.
              *
              * @remarks
              * [Api set: WordApi 1.4]
              */
             italic?: boolean;
             /**
-             * Specifies a value that indicates whether the comment text has a strikethrough.
+             * Specifies whether the comment text has a strikethrough.
              *
              * @remarks
              * [Api set: WordApi 1.4]
              */
             strikeThrough?: boolean;
             /**
-             * Specifies a value that indicates the comment text's underline type. `none` if the comment text isn't underlined.
+             * Specifies the comment text's underline type. `none` if the comment text isn't underlined.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -140203,14 +140516,14 @@ declare namespace Word {
              */
             appearance?: Word.ContentControlAppearance | "BoundingBox" | "Tags" | "Hidden";
             /**
-             * Specifies a value that indicates whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
+             * Specifies whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
              */
             cannotDelete?: boolean;
             /**
-             * Specifies a value that indicates whether the user can edit the contents of the content control.
+             * Specifies whether the user can edit the contents of the content control.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -140231,7 +140544,7 @@ declare namespace Word {
              */
             placeholderText?: string;
             /**
-             * Specifies a value that indicates whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
+             * Specifies whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -141466,7 +141779,7 @@ declare namespace Word {
              */
             hyperlink?: string;
             /**
-             * Specifies a value that indicates whether the inline image retains its original proportions when you resize it.
+             * Specifies whether the inline image retains its original proportions when you resize it.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -145720,7 +146033,7 @@ declare namespace Word {
              */
             styleBuiltIn?: Word.BuiltInStyleName | "Other" | "Normal" | "Heading1" | "Heading2" | "Heading3" | "Heading4" | "Heading5" | "Heading6" | "Heading7" | "Heading8" | "Heading9" | "Toc1" | "Toc2" | "Toc3" | "Toc4" | "Toc5" | "Toc6" | "Toc7" | "Toc8" | "Toc9" | "FootnoteText" | "Header" | "Footer" | "Caption" | "FootnoteReference" | "EndnoteReference" | "EndnoteText" | "Title" | "Subtitle" | "Hyperlink" | "Strong" | "Emphasis" | "NoSpacing" | "ListParagraph" | "Quote" | "IntenseQuote" | "SubtleEmphasis" | "IntenseEmphasis" | "SubtleReference" | "IntenseReference" | "BookTitle" | "Bibliography" | "TocHeading" | "TableGrid" | "PlainTable1" | "PlainTable2" | "PlainTable3" | "PlainTable4" | "PlainTable5" | "TableGridLight" | "GridTable1Light" | "GridTable1Light_Accent1" | "GridTable1Light_Accent2" | "GridTable1Light_Accent3" | "GridTable1Light_Accent4" | "GridTable1Light_Accent5" | "GridTable1Light_Accent6" | "GridTable2" | "GridTable2_Accent1" | "GridTable2_Accent2" | "GridTable2_Accent3" | "GridTable2_Accent4" | "GridTable2_Accent5" | "GridTable2_Accent6" | "GridTable3" | "GridTable3_Accent1" | "GridTable3_Accent2" | "GridTable3_Accent3" | "GridTable3_Accent4" | "GridTable3_Accent5" | "GridTable3_Accent6" | "GridTable4" | "GridTable4_Accent1" | "GridTable4_Accent2" | "GridTable4_Accent3" | "GridTable4_Accent4" | "GridTable4_Accent5" | "GridTable4_Accent6" | "GridTable5Dark" | "GridTable5Dark_Accent1" | "GridTable5Dark_Accent2" | "GridTable5Dark_Accent3" | "GridTable5Dark_Accent4" | "GridTable5Dark_Accent5" | "GridTable5Dark_Accent6" | "GridTable6Colorful" | "GridTable6Colorful_Accent1" | "GridTable6Colorful_Accent2" | "GridTable6Colorful_Accent3" | "GridTable6Colorful_Accent4" | "GridTable6Colorful_Accent5" | "GridTable6Colorful_Accent6" | "GridTable7Colorful" | "GridTable7Colorful_Accent1" | "GridTable7Colorful_Accent2" | "GridTable7Colorful_Accent3" | "GridTable7Colorful_Accent4" | "GridTable7Colorful_Accent5" | "GridTable7Colorful_Accent6" | "ListTable1Light" | "ListTable1Light_Accent1" | "ListTable1Light_Accent2" | "ListTable1Light_Accent3" | "ListTable1Light_Accent4" | "ListTable1Light_Accent5" | "ListTable1Light_Accent6" | "ListTable2" | "ListTable2_Accent1" | "ListTable2_Accent2" | "ListTable2_Accent3" | "ListTable2_Accent4" | "ListTable2_Accent5" | "ListTable2_Accent6" | "ListTable3" | "ListTable3_Accent1" | "ListTable3_Accent2" | "ListTable3_Accent3" | "ListTable3_Accent4" | "ListTable3_Accent5" | "ListTable3_Accent6" | "ListTable4" | "ListTable4_Accent1" | "ListTable4_Accent2" | "ListTable4_Accent3" | "ListTable4_Accent4" | "ListTable4_Accent5" | "ListTable4_Accent6" | "ListTable5Dark" | "ListTable5Dark_Accent1" | "ListTable5Dark_Accent2" | "ListTable5Dark_Accent3" | "ListTable5Dark_Accent4" | "ListTable5Dark_Accent5" | "ListTable5Dark_Accent6" | "ListTable6Colorful" | "ListTable6Colorful_Accent1" | "ListTable6Colorful_Accent2" | "ListTable6Colorful_Accent3" | "ListTable6Colorful_Accent4" | "ListTable6Colorful_Accent5" | "ListTable6Colorful_Accent6" | "ListTable7Colorful" | "ListTable7Colorful_Accent1" | "ListTable7Colorful_Accent2" | "ListTable7Colorful_Accent3" | "ListTable7Colorful_Accent4" | "ListTable7Colorful_Accent5" | "ListTable7Colorful_Accent6";
             /**
-             * Gets the text of the body. Use the insertText method to insert text.
+             * Gets the text of the body. Use the `insertText` method to insert text.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -146158,7 +146471,7 @@ declare namespace Word {
         /** An interface describing the data returned by calling `commentContentRange.toJSON()`. */
         interface CommentContentRangeData {
             /**
-             * Specifies a value that indicates whether the comment text is bold.
+             * Specifies whether the comment text is bold.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -146179,14 +146492,14 @@ declare namespace Word {
              */
             isEmpty?: boolean;
             /**
-             * Specifies a value that indicates whether the comment text is italicized.
+             * Specifies whether the comment text is italicized.
              *
              * @remarks
              * [Api set: WordApi 1.4]
              */
             italic?: boolean;
             /**
-             * Specifies a value that indicates whether the comment text has a strikethrough.
+             * Specifies whether the comment text has a strikethrough.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -146200,7 +146513,7 @@ declare namespace Word {
              */
             text?: string;
             /**
-             * Specifies a value that indicates the comment text's underline type. `none` if the comment text isn't underlined.
+             * Specifies the comment text's underline type. `none` if the comment text isn't underlined.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -146610,14 +146923,14 @@ declare namespace Word {
              */
             appearance?: Word.ContentControlAppearance | "BoundingBox" | "Tags" | "Hidden";
             /**
-             * Specifies a value that indicates whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
+             * Specifies whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
              */
             cannotDelete?: boolean;
             /**
-             * Specifies a value that indicates whether the user can edit the contents of the content control.
+             * Specifies whether the user can edit the contents of the content control.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -146645,7 +146958,7 @@ declare namespace Word {
              */
             placeholderText?: string;
             /**
-             * Specifies a value that indicates whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
+             * Specifies whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -146785,7 +147098,7 @@ declare namespace Word {
             */
             schemaCollection?: Word.Interfaces.CustomXmlSchemaData[];
             /**
-             * Gets a value that indicates whether the `CustomXmlPart` is built-in.
+             * Gets whether the `CustomXmlPart` is built-in.
              *
              * @remarks
              * [Api set: WordApiDesktop 1.3]
@@ -148376,7 +148689,7 @@ declare namespace Word {
              */
             imageFormat?: Word.ImageFormat | "Unsupported" | "Undefined" | "Bmp" | "Jpeg" | "Gif" | "Tiff" | "Png" | "Icon" | "Exif" | "Wmf" | "Emf" | "Pict" | "Pdf" | "Svg";
             /**
-             * Specifies a value that indicates whether the inline image retains its original proportions when you resize it.
+             * Specifies whether the inline image retains its original proportions when you resize it.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -154274,7 +154587,7 @@ declare namespace Word {
              */
             styleBuiltIn?: boolean;
             /**
-             * Gets the text of the body. Use the insertText method to insert text.
+             * Gets the text of the body. Use the `insertText` method to insert text.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -155063,6 +155376,8 @@ declare namespace Word {
             resolved?: boolean;
         }
         /**
+         * Represents a content range within a comment.
+         *
          * @remarks
          * [Api set: WordApi 1.4]
          */
@@ -155072,7 +155387,7 @@ declare namespace Word {
              */
             $all?: boolean;
             /**
-             * Specifies a value that indicates whether the comment text is bold.
+             * Specifies whether the comment text is bold.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -155093,14 +155408,14 @@ declare namespace Word {
              */
             isEmpty?: boolean;
             /**
-             * Specifies a value that indicates whether the comment text is italicized.
+             * Specifies whether the comment text is italicized.
              *
              * @remarks
              * [Api set: WordApi 1.4]
              */
             italic?: boolean;
             /**
-             * Specifies a value that indicates whether the comment text has a strikethrough.
+             * Specifies whether the comment text has a strikethrough.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -155114,7 +155429,7 @@ declare namespace Word {
              */
             text?: boolean;
             /**
-             * Specifies a value that indicates the comment text's underline type. `none` if the comment text isn't underlined.
+             * Specifies the comment text's underline type. `none` if the comment text isn't underlined.
              *
              * @remarks
              * [Api set: WordApi 1.4]
@@ -155785,14 +156100,14 @@ declare namespace Word {
              */
             appearance?: boolean;
             /**
-             * Specifies a value that indicates whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
+             * Specifies whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
              */
             cannotDelete?: boolean;
             /**
-             * Specifies a value that indicates whether the user can edit the contents of the content control.
+             * Specifies whether the user can edit the contents of the content control.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -155820,7 +156135,7 @@ declare namespace Word {
              */
             placeholderText?: boolean;
             /**
-             * Specifies a value that indicates whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
+             * Specifies whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -156000,14 +156315,14 @@ declare namespace Word {
              */
             appearance?: boolean;
             /**
-             * For EACH ITEM in the collection: Specifies a value that indicates whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
+             * For EACH ITEM in the collection: Specifies whether the user can delete the content control. Mutually exclusive with `removeWhenEdited`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
              */
             cannotDelete?: boolean;
             /**
-             * For EACH ITEM in the collection: Specifies a value that indicates whether the user can edit the contents of the content control.
+             * For EACH ITEM in the collection: Specifies whether the user can edit the contents of the content control.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -156035,7 +156350,7 @@ declare namespace Word {
              */
             placeholderText?: boolean;
             /**
-             * For EACH ITEM in the collection: Specifies a value that indicates whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
+             * For EACH ITEM in the collection: Specifies whether the content control is removed after it's edited. Mutually exclusive with `cannotDelete`.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -156242,7 +156557,7 @@ declare namespace Word {
             */
             documentElement?: Word.Interfaces.CustomXmlNodeLoadOptions;
             /**
-             * Gets a value that indicates whether the `CustomXmlPart` is built-in.
+             * Gets whether the `CustomXmlPart` is built-in.
              *
              * @remarks
              * [Api set: WordApiDesktop 1.3]
@@ -156289,7 +156604,7 @@ declare namespace Word {
             */
             documentElement?: Word.Interfaces.CustomXmlNodeLoadOptions;
             /**
-             * For EACH ITEM in the collection: Gets a value that indicates whether the `CustomXmlPart` is built-in.
+             * For EACH ITEM in the collection: Gets whether the `CustomXmlPart` is built-in.
              *
              * @remarks
              * [Api set: WordApiDesktop 1.3]
@@ -156336,7 +156651,7 @@ declare namespace Word {
             */
             documentElement?: Word.Interfaces.CustomXmlNodeLoadOptions;
             /**
-             * For EACH ITEM in the collection: Gets a value that indicates whether the `CustomXmlPart` is built-in.
+             * For EACH ITEM in the collection: Gets whether the `CustomXmlPart` is built-in.
              *
              * @remarks
              * [Api set: WordApiDesktop 1.3]
@@ -158264,7 +158579,7 @@ declare namespace Word {
              */
             imageFormat?: boolean;
             /**
-             * Specifies a value that indicates whether the inline image retains its original proportions when you resize it.
+             * Specifies whether the inline image retains its original proportions when you resize it.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -158374,7 +158689,7 @@ declare namespace Word {
              */
             imageFormat?: boolean;
             /**
-             * For EACH ITEM in the collection: Specifies a value that indicates whether the inline image retains its original proportions when you resize it.
+             * For EACH ITEM in the collection: Specifies whether the inline image retains its original proportions when you resize it.
              *
              * @remarks
              * [Api set: WordApi 1.1]
@@ -180448,19 +180763,19 @@ declare namespace PowerPoint {
      */
     enum ConnectorType {
         /**
-         * Straight connector type
+         * Straight connector type.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         straight = "Straight",
         /**
-         * Elbow connector type
+         * Elbow connector type.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         elbow = "Elbow",
         /**
-         * Curve connector type
+         * Curve connector type.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
@@ -180474,1063 +180789,1063 @@ declare namespace PowerPoint {
      */
     enum GeometricShapeType {
         /**
-         * Straight Line from Top-Right Corner to Bottom-Left Corner of the Shape
+         * Straight line from top-right corner to bottom-left corner of the shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         lineInverse = "LineInverse",
         /**
-         * Isosceles Triangle
+         * Isosceles triangle geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         triangle = "Triangle",
         /**
-         * Right Triangle
+         * Right triangle geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         rightTriangle = "RightTriangle",
         /**
-         * Rectangle
+         * Rectangle geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         rectangle = "Rectangle",
         /**
-         * Diamond
+         * Diamond geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         diamond = "Diamond",
         /**
-         * Parallelogram
+         * Parallelogram geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         parallelogram = "Parallelogram",
         /**
-         * Trapezoid
+         * Trapezoid geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         trapezoid = "Trapezoid",
         /**
-         * Trapezoid which may have Non-Equal Sides
+         * Trapezoid geometric shape which may have non-equal sides.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         nonIsoscelesTrapezoid = "NonIsoscelesTrapezoid",
         /**
-         * Pentagon
+         * Pentagon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         pentagon = "Pentagon",
         /**
-         * Hexagon
+         * Hexagon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         hexagon = "Hexagon",
         /**
-         * Heptagon
+         * Heptagon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         heptagon = "Heptagon",
         /**
-         * Octagon
+         * Octagon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         octagon = "Octagon",
         /**
-         * Decagon
+         * Decagon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         decagon = "Decagon",
         /**
-         * Dodecagon
+         * Dodecagon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         dodecagon = "Dodecagon",
         /**
-         * Star: 4 Points
+         * Star: 4 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star4 = "Star4",
         /**
-         * Star: 5 Points
+         * Star: 5 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star5 = "Star5",
         /**
-         * Star: 6 Points
+         * Star: 6 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star6 = "Star6",
         /**
-         * Star: 7 Points
+         * Star: 7 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star7 = "Star7",
         /**
-         * Star: 8 Points
+         * Star: 8 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star8 = "Star8",
         /**
-         * Star: 10 Points
+         * Star: 10 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star10 = "Star10",
         /**
-         * Star: 12 Points
+         * Star: 12 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star12 = "Star12",
         /**
-         * Star: 16 Points
+         * Star: 16 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star16 = "Star16",
         /**
-         * Star: 24 Points
+         * Star: 24 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star24 = "Star24",
         /**
-         * Star: 32 Points
+         * Star: 32 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         star32 = "Star32",
         /**
-         * Rectangle: Rounded Corners
+         * Rectangle geometric shape: rounded corners.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         roundRectangle = "RoundRectangle",
         /**
-         * Rectangle: Single Corner Rounded
+         * Rectangle geometric shape: single corner rounded.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         round1Rectangle = "Round1Rectangle",
         /**
-         * Rectangle: Top Corners Rounded
+         * Rectangle geometric shape: top corners rounded.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         round2SameRectangle = "Round2SameRectangle",
         /**
-         * Rectangle: Diagonal Corners Rounded
+         * Rectangle geometric shape: diagonal corners rounded.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         round2DiagonalRectangle = "Round2DiagonalRectangle",
         /**
-         * Rectangle: Top Corners One Rounded and One Snipped
+         * Rectangle geometric shape: top corners one rounded and one snipped.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         snipRoundRectangle = "SnipRoundRectangle",
         /**
-         * Rectangle: Single Corner Snipped
+         * Rectangle geometric shape: single corner snipped.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         snip1Rectangle = "Snip1Rectangle",
         /**
-         * Rectangle: Top Corners Snipped
+         * Rectangle geometric shape: top corners snipped.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         snip2SameRectangle = "Snip2SameRectangle",
         /**
-         * Rectangle: Diagonal Corners Snipped
+         * Rectangle geometric shape: diagonal corners snipped.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         snip2DiagonalRectangle = "Snip2DiagonalRectangle",
         /**
-         * Plaque
+         * Plaque geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         plaque = "Plaque",
         /**
-         * Oval
+         * Oval geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         ellipse = "Ellipse",
         /**
-         * Teardrop
+         * Teardrop geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         teardrop = "Teardrop",
         /**
-         * Arrow: Pentagon
+         * Arrow: pentagon.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         homePlate = "HomePlate",
         /**
-         * Arrow: Chevron
+         * Arrow: chevron.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         chevron = "Chevron",
         /**
-         * Partial Circle
+         * Partial circle geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         pieWedge = "PieWedge",
         /**
-         * Partial Circle with Adjustable Spanning Area
+         * Partial circle geometric shape with adjustable spanning area.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         pie = "Pie",
         /**
-         * Block Arc
+         * Block arc geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         blockArc = "BlockArc",
         /**
-         * Circle: Hollow
+         * Circle geometric shape: hollow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         donut = "Donut",
         /**
-         * "Not Allowed" Symbol
+         * "Not allowed" symbol.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         noSmoking = "NoSmoking",
         /**
-         * Arrow: Right
+         * Arrow: right.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         rightArrow = "RightArrow",
         /**
-         * Arrow: Left
+         * Arrow: left.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftArrow = "LeftArrow",
         /**
-         * Arrow: Up
+         * Arrow: up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         upArrow = "UpArrow",
         /**
-         * Arrow: Down
+         * Arrow: down.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         downArrow = "DownArrow",
         /**
-         * Arrow: Striped Right
+         * Arrow: striped right.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         stripedRightArrow = "StripedRightArrow",
         /**
-         * Arrow: Notched Right
+         * Arrow: notched right.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         notchedRightArrow = "NotchedRightArrow",
         /**
-         * Arrow: Bent-Up
+         * Arrow: bent-up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         bentUpArrow = "BentUpArrow",
         /**
-         * Arrow: Left-Right
+         * Arrow: left-right.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftRightArrow = "LeftRightArrow",
         /**
-         * Arrow: Up-Down
+         * Arrow: up-down.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         upDownArrow = "UpDownArrow",
         /**
-         * Arrow: Left-Up
+         * Arrow: left-up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftUpArrow = "LeftUpArrow",
         /**
-         * Arrow: Left-Right-Up
+         * Arrow: left-right-up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftRightUpArrow = "LeftRightUpArrow",
         /**
-         * Arrow: Quad
+         * Arrow: quad.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         quadArrow = "QuadArrow",
         /**
-         * Callout: Left Arrow
+         * Callout: left arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftArrowCallout = "LeftArrowCallout",
         /**
-         * Callout: Right Arrow
+         * Callout: right arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         rightArrowCallout = "RightArrowCallout",
         /**
-         * Callout: Up Arrow
+         * Callout: up arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         upArrowCallout = "UpArrowCallout",
         /**
-         * Callout: Down Arrow
+         * Callout: down arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         downArrowCallout = "DownArrowCallout",
         /**
-         * Callout: Left-Right Arrow
+         * Callout: left-right arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftRightArrowCallout = "LeftRightArrowCallout",
         /**
-         * Callout: Up-Down Arrow
+         * Callout: up-down arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         upDownArrowCallout = "UpDownArrowCallout",
         /**
-         * Callout: Quad Arrow
+         * Callout: quad arrow.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         quadArrowCallout = "QuadArrowCallout",
         /**
-         * Arrow: Bent
+         * Arrow: bent.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         bentArrow = "BentArrow",
         /**
-         * Arrow: U-Turn
+         * Arrow: U-turn.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         uturnArrow = "UturnArrow",
         /**
-         * Arrow: Circular
+         * Arrow: circular.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         circularArrow = "CircularArrow",
         /**
-         * Arrow: Circular with Opposite Arrow Direction
+         * Arrow: circular with opposite arrow direction.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftCircularArrow = "LeftCircularArrow",
         /**
-         * Arrow: Circular with Two Arrows in Both Directions
+         * Arrow: circular with two arrows in both directions.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftRightCircularArrow = "LeftRightCircularArrow",
         /**
-         * Arrow: Curved Right
+         * Arrow: curved right.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         curvedRightArrow = "CurvedRightArrow",
         /**
-         * Arrow: Curved Left
+         * Arrow: curved left.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         curvedLeftArrow = "CurvedLeftArrow",
         /**
-         * Arrow: Curved Up
+         * Arrow: curved up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         curvedUpArrow = "CurvedUpArrow",
         /**
-         * Arrow: Curved Down
+         * Arrow: curved down.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         curvedDownArrow = "CurvedDownArrow",
         /**
-         * Arrow: Curved Right Arrow with Varying Width
+         * Arrow: curved right arrow with varying width.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         swooshArrow = "SwooshArrow",
         /**
-         * Cube
+         * Cube geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         cube = "Cube",
         /**
-         * Cylinder
+         * Cylinder geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         can = "Can",
         /**
-         * Lightning Bolt
+         * Lightning bolt.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         lightningBolt = "LightningBolt",
         /**
-         * Heart
+         * Heart geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         heart = "Heart",
         /**
-         * Sun
+         * Sun.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         sun = "Sun",
         /**
-         * Moon
+         * Moon geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         moon = "Moon",
         /**
-         * Smiley Face
+         * Smiley face.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         smileyFace = "SmileyFace",
         /**
-         * Explosion: 8 Points
+         * Explosion: 8 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         irregularSeal1 = "IrregularSeal1",
         /**
-         * Explosion: 14 Points
+         * Explosion: 14 points.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         irregularSeal2 = "IrregularSeal2",
         /**
-         * Rectangle: Folded Corner
+         * Rectangle geometric shape: folded corner.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         foldedCorner = "FoldedCorner",
         /**
-         * Rectangle: Beveled
+         * Rectangle geometric shape: beveled.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         bevel = "Bevel",
         /**
-         * Frame
+         * Frame geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         frame = "Frame",
         /**
-         * Half Frame
+         * Half frame geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         halfFrame = "HalfFrame",
         /**
-         * L-Shape
+         * L-shape geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         corner = "Corner",
         /**
-         * Diagonal Stripe
+         * Diagonal stripe geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         diagonalStripe = "DiagonalStripe",
         /**
-         * Chord
+         * Chord geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         chord = "Chord",
         /**
-         * Arc
+         * Arc geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         arc = "Arc",
         /**
-         * Left Bracket
+         * Left bracket.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftBracket = "LeftBracket",
         /**
-         * Right Bracket
+         * Right bracket.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         rightBracket = "RightBracket",
         /**
-         * Left Brace
+         * Left brace.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftBrace = "LeftBrace",
         /**
-         * Right Brace
+         * Right brace.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         rightBrace = "RightBrace",
         /**
-         * Double Bracket
+         * Double bracket.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         bracketPair = "BracketPair",
         /**
-         * Double Brace
+         * Double brace.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         bracePair = "BracePair",
         /**
-         * Callout: Line with No Border
+         * Callout: line with no border.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         callout1 = "Callout1",
         /**
-         * Callout: Bent Line with No Border
+         * Callout: bent line with no border.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         callout2 = "Callout2",
         /**
-         * Callout: Double Bent Line with No Border
+         * Callout: double bent line with no border.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         callout3 = "Callout3",
         /**
-         * Callout: Line with Accent Bar
+         * Callout: line with accent bar.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         accentCallout1 = "AccentCallout1",
         /**
-         * Callout: Bent Line with Accent Bar
+         * Callout: bent line with accent bar.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         accentCallout2 = "AccentCallout2",
         /**
-         * Callout: Double Bent Line with Accent Bar
+         * Callout: double bent line with accent bar.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         accentCallout3 = "AccentCallout3",
         /**
-         * Callout: Line
+         * Callout: line.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         borderCallout1 = "BorderCallout1",
         /**
-         * Callout: Bent Line
+         * Callout: bent line.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         borderCallout2 = "BorderCallout2",
         /**
-         * Callout: Double Bent Line
+         * Callout: double bent line.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         borderCallout3 = "BorderCallout3",
         /**
-         * Callout: Line with Border and Accent Bar
+         * Callout: line with border and accent bar.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         accentBorderCallout1 = "AccentBorderCallout1",
         /**
-         * Callout: Bent Line with Border and Accent Bar
+         * Callout: bent line with border and accent bar.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         accentBorderCallout2 = "AccentBorderCallout2",
         /**
-         * Callout: Double Bent Line with Border and Accent Bar
+         * Callout: double bent line with border and accent bar.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         accentBorderCallout3 = "AccentBorderCallout3",
         /**
-         * Speech Bubble: Rectangle
+         * Speech bubble: rectangle.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         wedgeRectCallout = "WedgeRectCallout",
         /**
-         * Speech Bubble: Rectangle with Corners Rounded
+         * Speech bubble: rectangle with corners rounded.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         wedgeRRectCallout = "WedgeRRectCallout",
         /**
-         * Speech Bubble: Oval
+         * Speech bubble: oval.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         wedgeEllipseCallout = "WedgeEllipseCallout",
         /**
-         * Thought Bubble: Cloud
+         * Thought bubble: cloud.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         cloudCallout = "CloudCallout",
         /**
-         * Cloud
+         * Cloud.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         cloud = "Cloud",
         /**
-         * Ribbon: Tilted Down
+         * Ribbon: tilted down.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         ribbon = "Ribbon",
         /**
-         * Ribbon: Tilted Up
+         * Ribbon: tilted up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         ribbon2 = "Ribbon2",
         /**
-         * Ribbon: Curved and Tilted Down
+         * Ribbon: curved and tilted down.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         ellipseRibbon = "EllipseRibbon",
         /**
-         * Ribbon: Curved and Tilted Up
+         * Ribbon: curved and tilted up.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         ellipseRibbon2 = "EllipseRibbon2",
         /**
-         * Ribbon: Straight with Both Left and Right Arrows
+         * Ribbon: straight with both left and right arrows.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         leftRightRibbon = "LeftRightRibbon",
         /**
-         * Scroll: Vertical
+         * Scroll: vertical.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         verticalScroll = "VerticalScroll",
         /**
-         * Scroll: Horizontal
+         * Scroll: horizontal.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         horizontalScroll = "HorizontalScroll",
         /**
-         * Wave
+         * Wave geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         wave = "Wave",
         /**
-         * Double Wave
+         * Double wave geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         doubleWave = "DoubleWave",
         /**
-         * Cross
+         * Cross geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         plus = "Plus",
         /**
-         * Flowchart: Process
+         * Flowchart: process.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartProcess = "FlowChartProcess",
         /**
-         * Flowchart: Decision
+         * Flowchart: decision.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartDecision = "FlowChartDecision",
         /**
-         * Flowchart: Data
+         * Flowchart: data.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartInputOutput = "FlowChartInputOutput",
         /**
-         * Flowchart: Predefined Process
+         * Flowchart: predefined process.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartPredefinedProcess = "FlowChartPredefinedProcess",
         /**
-         * Flowchart: Internal Storage
+         * Flowchart: internal storage.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartInternalStorage = "FlowChartInternalStorage",
         /**
-         * Flowchart: Document
+         * Flowchart: document.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartDocument = "FlowChartDocument",
         /**
-         * Flowchart: Multidocument
+         * Flowchart: multidocument.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartMultidocument = "FlowChartMultidocument",
         /**
-         * Flowchart: Terminator
+         * Flowchart: terminator.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartTerminator = "FlowChartTerminator",
         /**
-         * Flowchart: Preparation
+         * Flowchart: preparation.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartPreparation = "FlowChartPreparation",
         /**
-         * Flowchart: Manual Input
+         * Flowchart: manual input.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartManualInput = "FlowChartManualInput",
         /**
-         * Flowchart: Manual Operation
+         * Flowchart: manual operation.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartManualOperation = "FlowChartManualOperation",
         /**
-         * Flowchart: Connector
+         * Flowchart: connector.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartConnector = "FlowChartConnector",
         /**
-         * Flowchart: Card
+         * Flowchart: card.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartPunchedCard = "FlowChartPunchedCard",
         /**
-         * Flowchart: Punched Tape
+         * Flowchart: punched tape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartPunchedTape = "FlowChartPunchedTape",
         /**
-         * Flowchart: Summing Junction
+         * Flowchart: summing junction.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartSummingJunction = "FlowChartSummingJunction",
         /**
-         * Flowchart: Or
+         * Flowchart: or.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartOr = "FlowChartOr",
         /**
-         * Flowchart: Collate
+         * Flowchart: collate.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartCollate = "FlowChartCollate",
         /**
-         * Flowchart: Sort
+         * Flowchart: sort.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartSort = "FlowChartSort",
         /**
-         * Flowchart: Extract
+         * Flowchart: extract.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartExtract = "FlowChartExtract",
         /**
-         * Flowchart: Merge
+         * Flowchart: merge.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartMerge = "FlowChartMerge",
         /**
-         * FlowChart: Offline Storage
+         * Flowchart: offline storage.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartOfflineStorage = "FlowChartOfflineStorage",
         /**
-         * Flowchart: Stored Data
+         * Flowchart: stored data.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartOnlineStorage = "FlowChartOnlineStorage",
         /**
-         * Flowchart: Sequential Access Storage
+         * Flowchart: sequential access storage.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartMagneticTape = "FlowChartMagneticTape",
         /**
-         * Flowchart: Magnetic Disk
+         * Flowchart: magnetic disk.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartMagneticDisk = "FlowChartMagneticDisk",
         /**
-         * Flowchart: Direct Access Storage
+         * Flowchart: direct access storage.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartMagneticDrum = "FlowChartMagneticDrum",
         /**
-         * Flowchart: Display
+         * Flowchart: display.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartDisplay = "FlowChartDisplay",
         /**
-         * Flowchart: Delay
+         * Flowchart: delay.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartDelay = "FlowChartDelay",
         /**
-         * Flowchart: Alternate Process
+         * Flowchart: alternate process.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartAlternateProcess = "FlowChartAlternateProcess",
         /**
-         * Flowchart: Off-page Connector
+         * Flowchart: off-page connector.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         flowChartOffpageConnector = "FlowChartOffpageConnector",
         /**
-         * Action Button: Blank
+         * Action button: blank.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonBlank = "ActionButtonBlank",
         /**
-         * Action Button: Go Home
+         * Action button: go home.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonHome = "ActionButtonHome",
         /**
-         * Action Button: Help
+         * Action button: help.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonHelp = "ActionButtonHelp",
         /**
-         * Action Button: Get Information
+         * Action button: get information.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonInformation = "ActionButtonInformation",
         /**
-         * Action Button: Go Forward or Next
+         * Action button: go forward or next.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonForwardNext = "ActionButtonForwardNext",
         /**
-         * Action Button: Go Back or Previous
+         * Action button: go back or previous.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonBackPrevious = "ActionButtonBackPrevious",
         /**
-         * Action Button: Go to End
+         * Action button: go to end.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonEnd = "ActionButtonEnd",
         /**
-         * Action Button: Go to Beginning
+         * Action button: go to beginning.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonBeginning = "ActionButtonBeginning",
         /**
-         * Action Button: Return
+         * Action button: return.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonReturn = "ActionButtonReturn",
         /**
-         * Action Button: Document
+         * Action button: document.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonDocument = "ActionButtonDocument",
         /**
-         * Action Button: Sound
+         * Action button: sound.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonSound = "ActionButtonSound",
         /**
-         * Action Button: Video
+         * Action button: video.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         actionButtonMovie = "ActionButtonMovie",
         /**
-         * Gear: A Gear with Six Teeth
+         * Gear: a gear with six teeth.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         gear6 = "Gear6",
         /**
-         * Gear: A Gear with Nine Teeth
+         * Gear: a gear with nine teeth.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         gear9 = "Gear9",
         /**
-         * Funnel
+         * Funnel geometric shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         funnel = "Funnel",
         /**
-         * Plus Sign
+         * Plus sign.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         mathPlus = "MathPlus",
         /**
-         * Minus Sign
+         * Minus sign.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         mathMinus = "MathMinus",
         /**
-         * Multiplication Sign
+         * Multiplication sign.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         mathMultiply = "MathMultiply",
         /**
-         * Division Sign
+         * Division sign.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         mathDivide = "MathDivide",
         /**
-         * Equals
+         * Equals.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         mathEqual = "MathEqual",
         /**
-         * Not Equal
+         * Not equal.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         mathNotEqual = "MathNotEqual",
         /**
-         * Four Right Triangles that Define a Rectangular Shape
+         * Four right triangles that define a rectangular shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         cornerTabs = "CornerTabs",
         /**
-         * Four Small Squares that Define a Rectangular Shape.
+         * Four small squares that define a rectangular shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         squareTabs = "SquareTabs",
         /**
-         * Four Quarter Circles that Define a Rectangular Shape.
+         * Four quarter circles that define a rectangular shape.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         plaqueTabs = "PlaqueTabs",
         /**
-         * A Rectangle Divided into Four Parts Along Diagonal Lines.
+         * A rectangle divided into four parts along diagonal lines.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         chartX = "ChartX",
         /**
-         * A Rectangle Divided into Six Parts Along a Vertical Line and Diagonal Lines.
+         * A rectangle divided into six parts along a vertical line and diagonal lines.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
         chartStar = "ChartStar",
         /**
-         * A Rectangle Divided Vertically and Horizontally into Four Quarters.
+         * A rectangle divided vertically and horizontally into four quarters.
          * @remarks
          * [Api set: PowerPointApi 1.4]
          */
@@ -181577,6 +181892,88 @@ declare namespace PowerPoint {
          * [Api set: PowerPointApi 1.4]
          */
         width?: number;
+    }
+    /**
+     * Represents a collection of shapes.
+     *
+     * @remarks
+     * [Api set: PowerPointApi 1.5]
+     */
+    class ShapeScopedCollection extends OfficeExtension.ClientObject {
+        /** The request context associated with the object. This connects the add-in's process to the Office host application's process. */
+        context: RequestContext;
+        /** Gets the loaded child items in this collection. */
+        readonly items: PowerPoint.Shape[];
+        /**
+         * Gets the number of shapes in the collection.
+         *
+         * @remarks
+         * [Api set: PowerPointApi 1.5]
+         * @returns The number of shapes in the collection.
+         */
+        getCount(): OfficeExtension.ClientResult<number>;
+        /**
+         * Gets a shape using its unique ID. An error is thrown if the shape doesn't exist.
+         *
+         * @remarks
+         * [Api set: PowerPointApi 1.5]
+         *
+         * @param key The ID of the shape.
+         * @returns The shape with the unique ID. If such a shape doesn't exist, an error is thrown.
+         */
+        getItem(key: string): PowerPoint.Shape;
+        /**
+         * Gets a shape using its zero-based index in the collection. An error is thrown if the index is out of range.
+         *
+         * @remarks
+         * [Api set: PowerPointApi 1.5]
+         *
+         * @param index The index of the shape in the collection.
+         * @returns The shape at the given index. An error is thrown if index is out of range.
+         */
+        getItemAt(index: number): PowerPoint.Shape;
+        /**
+         * Gets a shape using its unique ID. If such a shape doesn't exist, an object with an `isNullObject` property set to true is returned. For further information, see {@link https://learn.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods and properties}.
+         *
+         * @remarks
+         * [Api set: PowerPointApi 1.5]
+         *
+         * @param id The ID of the shape.
+         * @returns The shape with the unique ID. If such a shape doesn't exist, an object with an `isNullObject` property set to true is returned.
+         */
+        getItemOrNullObject(id: string): PowerPoint.Shape;
+        /**
+         * Groups all shapes in this collection into a single shape.
+                    If the collection contains fewer than two shapes, then this method returns the `GeneralException` error.
+         *
+         * @remarks
+         * [Api set: PowerPointApi 1.8]
+         * @returns The newly created grouped shape as a {@link PowerPoint.Shape}.
+         */
+        group(): PowerPoint.Shape;
+        /**
+         * Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties.
+         *
+         * @param options Provides options for which properties of the object to load.
+         */
+        load(options?: PowerPoint.Interfaces.ShapeScopedCollectionLoadOptions & PowerPoint.Interfaces.CollectionLoadOptions): PowerPoint.ShapeScopedCollection;
+        /**
+         * Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties.
+         *
+         * @param propertyNames A comma-delimited string or an array of strings that specify the properties to load.
+         */
+        load(propertyNames?: string | string[]): PowerPoint.ShapeScopedCollection;
+        /**
+         * Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties.
+         *
+         * @param propertyNamesAndPaths `propertyNamesAndPaths.select` is a comma-delimited string that specifies the properties to load, and `propertyNamesAndPaths.expand` is a comma-delimited string that specifies the navigation properties to load.
+         */
+        load(propertyNamesAndPaths?: OfficeExtension.LoadOption): PowerPoint.ShapeScopedCollection;
+        /**
+        * Overrides the JavaScript `toJSON()` method in order to provide more useful output when an API object is passed to `JSON.stringify()`. (`JSON.stringify`, in turn, calls the `toJSON` method of the object that's passed to it.)
+        * Whereas the original `PowerPoint.ShapeScopedCollection` object is an API object, the `toJSON` method returns a plain JavaScript object (typed as `PowerPoint.Interfaces.ShapeScopedCollectionData`) that contains an "items" array with shallow copies of any loaded properties from the collection's items.
+        */
+        toJSON(): PowerPoint.Interfaces.ShapeScopedCollectionData;
     }
     /**
      * Specifies the dash style for a line.
@@ -185825,88 +186222,6 @@ declare namespace PowerPoint {
         width?: number;
     }
     /**
-     * Represents a collection of shapes.
-     *
-     * @remarks
-     * [Api set: PowerPointApi 1.5]
-     */
-    class ShapeScopedCollection extends OfficeExtension.ClientObject {
-        /** The request context associated with the object. This connects the add-in's process to the Office host application's process. */
-        context: RequestContext;
-        /** Gets the loaded child items in this collection. */
-        readonly items: PowerPoint.Shape[];
-        /**
-         * Gets the number of shapes in the collection.
-         *
-         * @remarks
-         * [Api set: PowerPointApi 1.5]
-         * @returns The number of shapes in the collection.
-         */
-        getCount(): OfficeExtension.ClientResult<number>;
-        /**
-         * Gets a shape using its unique ID. An error is thrown if the shape doesn't exist.
-         *
-         * @remarks
-         * [Api set: PowerPointApi 1.5]
-         *
-         * @param key The ID of the shape.
-         * @returns The shape with the unique ID. If such a shape doesn't exist, an error is thrown.
-         */
-        getItem(key: string): PowerPoint.Shape;
-        /**
-         * Gets a shape using its zero-based index in the collection. An error is thrown if the index is out of range.
-         *
-         * @remarks
-         * [Api set: PowerPointApi 1.5]
-         *
-         * @param index The index of the shape in the collection.
-         * @returns The shape at the given index. An error is thrown if index is out of range.
-         */
-        getItemAt(index: number): PowerPoint.Shape;
-        /**
-         * Gets a shape using its unique ID. If such a shape doesn't exist, an object with an `isNullObject` property set to true is returned. For further information, see {@link https://learn.microsoft.com/office/dev/add-ins/develop/application-specific-api-model#ornullobject-methods-and-properties | *OrNullObject methods and properties}.
-         *
-         * @remarks
-         * [Api set: PowerPointApi 1.5]
-         *
-         * @param id The ID of the shape.
-         * @returns The shape with the unique ID. If such a shape doesn't exist, an object with an `isNullObject` property set to true is returned.
-         */
-        getItemOrNullObject(id: string): PowerPoint.Shape;
-        /**
-         * Groups all shapes in this collection into a single shape.
-                    If the collection contains fewer than two shapes, then this method returns the `GeneralException` error.
-         *
-         * @remarks
-         * [Api set: PowerPointApi 1.8]
-         * @returns The newly created grouped shape as a {@link PowerPoint.Shape}.
-         */
-        group(): PowerPoint.Shape;
-        /**
-         * Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties.
-         *
-         * @param options Provides options for which properties of the object to load.
-         */
-        load(options?: PowerPoint.Interfaces.ShapeScopedCollectionLoadOptions & PowerPoint.Interfaces.CollectionLoadOptions): PowerPoint.ShapeScopedCollection;
-        /**
-         * Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties.
-         *
-         * @param propertyNames A comma-delimited string or an array of strings that specify the properties to load.
-         */
-        load(propertyNames?: string | string[]): PowerPoint.ShapeScopedCollection;
-        /**
-         * Queues up a command to load the specified properties of the object. You must call `context.sync()` before reading the properties.
-         *
-         * @param propertyNamesAndPaths `propertyNamesAndPaths.select` is a comma-delimited string that specifies the properties to load, and `propertyNamesAndPaths.expand` is a comma-delimited string that specifies the navigation properties to load.
-         */
-        load(propertyNamesAndPaths?: OfficeExtension.LoadOption): PowerPoint.ShapeScopedCollection;
-        /**
-        * Overrides the JavaScript `toJSON()` method in order to provide more useful output when an API object is passed to `JSON.stringify()`. (`JSON.stringify`, in turn, calls the `toJSON` method of the object that's passed to it.)
-        * Whereas the original `PowerPoint.ShapeScopedCollection` object is an API object, the `toJSON` method returns a plain JavaScript object (typed as `PowerPoint.Interfaces.ShapeScopedCollectionData`) that contains an "items" array with shallow copies of any loaded properties from the collection's items.
-        */
-        toJSON(): PowerPoint.Interfaces.ShapeScopedCollectionData;
-    }
-    /**
      * Represents a shape group inside a presentation. To get the corresponding Shape object, use `ShapeGroup.shape`.
      *
      * @remarks
@@ -187604,6 +187919,10 @@ declare namespace PowerPoint {
         interface HyperlinkCollectionUpdateData {
             items?: PowerPoint.Interfaces.HyperlinkData[];
         }
+        /** An interface for updating data on the `ShapeScopedCollection` object, for use in `shapeScopedCollection.set({ ... })`. */
+        interface ShapeScopedCollectionUpdateData {
+            items?: PowerPoint.Interfaces.ShapeData[];
+        }
         /** An interface for updating data on the `Border` object, for use in `border.set({ ... })`. */
         interface BorderUpdateData {
             /**
@@ -187922,10 +188241,6 @@ declare namespace PowerPoint {
         /** An interface for updating data on the `TagCollection` object, for use in `tagCollection.set({ ... })`. */
         interface TagCollectionUpdateData {
             items?: PowerPoint.Interfaces.TagData[];
-        }
-        /** An interface for updating data on the `ShapeScopedCollection` object, for use in `shapeScopedCollection.set({ ... })`. */
-        interface ShapeScopedCollectionUpdateData {
-            items?: PowerPoint.Interfaces.ShapeData[];
         }
         /** An interface for updating data on the `ShapeLineFormat` object, for use in `shapeLineFormat.set({ ... })`. */
         interface ShapeLineFormatUpdateData {
@@ -188535,6 +188850,10 @@ declare namespace PowerPoint {
         interface HyperlinkCollectionData {
             items?: PowerPoint.Interfaces.HyperlinkData[];
         }
+        /** An interface describing the data returned by calling `shapeScopedCollection.toJSON()`. */
+        interface ShapeScopedCollectionData {
+            items?: PowerPoint.Interfaces.ShapeData[];
+        }
         /** An interface describing the data returned by calling `border.toJSON()`. */
         interface BorderData {
             /**
@@ -189016,10 +189335,6 @@ declare namespace PowerPoint {
              * [Api set: PowerPointApi 1.8]
              */
             index?: number;
-        }
-        /** An interface describing the data returned by calling `shapeScopedCollection.toJSON()`. */
-        interface ShapeScopedCollectionData {
-            items?: PowerPoint.Interfaces.ShapeData[];
         }
         /** An interface describing the data returned by calling `shapeGroup.toJSON()`. */
         interface ShapeGroupData {
@@ -189970,6 +190285,193 @@ declare namespace PowerPoint {
              * [Api set: PowerPointApi 1.10]
              */
             type?: boolean;
+        }
+        /**
+         * Represents a collection of shapes.
+         *
+         * @remarks
+         * [Api set: PowerPointApi 1.5]
+         */
+        interface ShapeScopedCollectionLoadOptions {
+            /**
+              Specifying `$all` for the load options loads all the scalar properties (such as `Range.address`) but not the navigational properties (such as `Range.format.fill.color`).
+             */
+            $all?: boolean;
+            /**
+            * For EACH ITEM in the collection: Returns an `Adjustments` object that contains adjustment values for all the adjustments in this shape.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.10]
+            */
+            adjustments?: PowerPoint.Interfaces.AdjustmentsLoadOptions;
+            /**
+            * For EACH ITEM in the collection: Returns the fill formatting of this shape.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.5]
+            */
+            fill?: PowerPoint.Interfaces.ShapeFillLoadOptions;
+            /**
+            * For EACH ITEM in the collection: Returns the `ShapeGroup` associated with the shape.
+            If the shape type isn't `group`, then this method returns the `GeneralException` error.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.8]
+            */
+            group?: PowerPoint.Interfaces.ShapeGroupLoadOptions;
+            /**
+            * For EACH ITEM in the collection: Returns the line formatting of this shape.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.5]
+            */
+            lineFormat?: PowerPoint.Interfaces.ShapeLineFormatLoadOptions;
+            /**
+            * For EACH ITEM in the collection: Returns the parent group of this shape.
+            If the shape isn't part of a group, then this method returns the `GeneralException` error.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.8]
+            */
+            parentGroup?: PowerPoint.Interfaces.ShapeLoadOptions;
+            /**
+            * For EACH ITEM in the collection: Returns the properties that apply specifically to this placeholder.
+            If the shape type isn't `placeholder`, then this method returns the `GeneralException` error.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.8]
+            */
+            placeholderFormat?: PowerPoint.Interfaces.PlaceholderFormatLoadOptions;
+            /**
+            * For EACH ITEM in the collection: Returns the {@link PowerPoint.TextFrame} object of this `Shape`. Throws an `InvalidArgument` exception if the shape doesn't support a `TextFrame`.
+            *
+            * @remarks
+            * [Api set: PowerPointApi 1.5]
+            */
+            textFrame?: PowerPoint.Interfaces.TextFrameLoadOptions;
+            /**
+             * For EACH ITEM in the collection: The alt text description of the Shape.
+                        
+                        Alt text provides alternative, text-based representations of the information contained in the Shape.
+                        This information is useful for people with vision or cognitive impairments who may not be able to see or understand the shape.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.10]
+             */
+            altTextDescription?: boolean;
+            /**
+             * For EACH ITEM in the collection: The alt text title of the Shape.
+                        
+                        Alt text provides alternative, text-based representations of the information contained in the Shape.
+                        This information is useful for people with vision or cognitive impairments who may not be able to see or understand the shape.
+                        A title can be read to a person with a disability and is used to determine whether they wish to hear the description of the content.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.10]
+             */
+            altTextTitle?: boolean;
+            /**
+             * For EACH ITEM in the collection: Gets the creation ID of the shape. Returns `null` if the shape has no creation ID.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.10]
+             */
+            creationId?: boolean;
+            /**
+             * For EACH ITEM in the collection: Specifies the height, in points, of the shape. Throws an `InvalidArgument` exception when set with a negative value.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.4]
+             */
+            height?: boolean;
+            /**
+             * For EACH ITEM in the collection: Gets the unique ID of the shape.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.3]
+             */
+            id?: boolean;
+            /**
+             * For EACH ITEM in the collection: Represents whether the shape is decorative or not.
+                        
+                        Decorative objects add visual interest but aren't informative (e.g. stylistic borders).
+                        People using screen readers will hear these are decorative so they know they aren't missing any important information.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.10]
+             */
+            isDecorative?: boolean;
+            /**
+             * For EACH ITEM in the collection: The distance, in points, from the left side of the shape to the left side of the slide.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.4]
+             */
+            left?: boolean;
+            /**
+             * For EACH ITEM in the collection: Returns the level of the specified shape.
+                        
+                        - A level of 0 means the shape isn't part of a group.
+                        
+                        - A level of 1 means the shape is part of a top-level group.
+                        
+                        - A level greater than 1 indicates the shape is a nested group.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.8]
+             */
+            level?: boolean;
+            /**
+             * For EACH ITEM in the collection: Specifies the name of this shape.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.4]
+             */
+            name?: boolean;
+            /**
+             * For EACH ITEM in the collection: Specifies the rotation, in degrees, of the shape around the z-axis.
+                        A positive value indicates clockwise rotation, and a negative value indicates counterclockwise rotation.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.10]
+             */
+            rotation?: boolean;
+            /**
+             * For EACH ITEM in the collection: The distance, in points, from the top edge of the shape to the top edge of the slide.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.4]
+             */
+            top?: boolean;
+            /**
+             * For EACH ITEM in the collection: Returns the type of this shape. See {@link PowerPoint.ShapeType} for details.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.4]
+             */
+            type?: boolean;
+            /**
+             * For EACH ITEM in the collection: Specifies if the shape is visible.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.10]
+             */
+            visible?: boolean;
+            /**
+             * For EACH ITEM in the collection: Specifies the width, in points, of the shape. Throws an `InvalidArgument` exception when set with a negative value.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.4]
+             */
+            width?: boolean;
+            /**
+             * For EACH ITEM in the collection: Returns the z-order position of the shape, with 0 representing the bottom of the order stack. Every shape on a slide has a unique z-order, but
+                        each slide also has a unique z-order stack, so two shapes on separate slides could have the same z-order number.
+             *
+             * @remarks
+             * [Api set: PowerPointApi 1.8]
+             */
+            zOrderPosition?: boolean;
         }
         /**
          * Represents the properties for a table cell border.
@@ -191168,193 +191670,6 @@ declare namespace PowerPoint {
              * [Api set: PowerPointApi 1.8]
              */
             index?: boolean;
-        }
-        /**
-         * Represents a collection of shapes.
-         *
-         * @remarks
-         * [Api set: PowerPointApi 1.5]
-         */
-        interface ShapeScopedCollectionLoadOptions {
-            /**
-              Specifying `$all` for the load options loads all the scalar properties (such as `Range.address`) but not the navigational properties (such as `Range.format.fill.color`).
-             */
-            $all?: boolean;
-            /**
-            * For EACH ITEM in the collection: Returns an `Adjustments` object that contains adjustment values for all the adjustments in this shape.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.10]
-            */
-            adjustments?: PowerPoint.Interfaces.AdjustmentsLoadOptions;
-            /**
-            * For EACH ITEM in the collection: Returns the fill formatting of this shape.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.5]
-            */
-            fill?: PowerPoint.Interfaces.ShapeFillLoadOptions;
-            /**
-            * For EACH ITEM in the collection: Returns the `ShapeGroup` associated with the shape.
-            If the shape type isn't `group`, then this method returns the `GeneralException` error.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.8]
-            */
-            group?: PowerPoint.Interfaces.ShapeGroupLoadOptions;
-            /**
-            * For EACH ITEM in the collection: Returns the line formatting of this shape.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.5]
-            */
-            lineFormat?: PowerPoint.Interfaces.ShapeLineFormatLoadOptions;
-            /**
-            * For EACH ITEM in the collection: Returns the parent group of this shape.
-            If the shape isn't part of a group, then this method returns the `GeneralException` error.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.8]
-            */
-            parentGroup?: PowerPoint.Interfaces.ShapeLoadOptions;
-            /**
-            * For EACH ITEM in the collection: Returns the properties that apply specifically to this placeholder.
-            If the shape type isn't `placeholder`, then this method returns the `GeneralException` error.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.8]
-            */
-            placeholderFormat?: PowerPoint.Interfaces.PlaceholderFormatLoadOptions;
-            /**
-            * For EACH ITEM in the collection: Returns the {@link PowerPoint.TextFrame} object of this `Shape`. Throws an `InvalidArgument` exception if the shape doesn't support a `TextFrame`.
-            *
-            * @remarks
-            * [Api set: PowerPointApi 1.5]
-            */
-            textFrame?: PowerPoint.Interfaces.TextFrameLoadOptions;
-            /**
-             * For EACH ITEM in the collection: The alt text description of the Shape.
-                        
-                        Alt text provides alternative, text-based representations of the information contained in the Shape.
-                        This information is useful for people with vision or cognitive impairments who may not be able to see or understand the shape.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.10]
-             */
-            altTextDescription?: boolean;
-            /**
-             * For EACH ITEM in the collection: The alt text title of the Shape.
-                        
-                        Alt text provides alternative, text-based representations of the information contained in the Shape.
-                        This information is useful for people with vision or cognitive impairments who may not be able to see or understand the shape.
-                        A title can be read to a person with a disability and is used to determine whether they wish to hear the description of the content.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.10]
-             */
-            altTextTitle?: boolean;
-            /**
-             * For EACH ITEM in the collection: Gets the creation ID of the shape. Returns `null` if the shape has no creation ID.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.10]
-             */
-            creationId?: boolean;
-            /**
-             * For EACH ITEM in the collection: Specifies the height, in points, of the shape. Throws an `InvalidArgument` exception when set with a negative value.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.4]
-             */
-            height?: boolean;
-            /**
-             * For EACH ITEM in the collection: Gets the unique ID of the shape.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.3]
-             */
-            id?: boolean;
-            /**
-             * For EACH ITEM in the collection: Represents whether the shape is decorative or not.
-                        
-                        Decorative objects add visual interest but aren't informative (e.g. stylistic borders).
-                        People using screen readers will hear these are decorative so they know they aren't missing any important information.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.10]
-             */
-            isDecorative?: boolean;
-            /**
-             * For EACH ITEM in the collection: The distance, in points, from the left side of the shape to the left side of the slide.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.4]
-             */
-            left?: boolean;
-            /**
-             * For EACH ITEM in the collection: Returns the level of the specified shape.
-                        
-                        - A level of 0 means the shape isn't part of a group.
-                        
-                        - A level of 1 means the shape is part of a top-level group.
-                        
-                        - A level greater than 1 indicates the shape is a nested group.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.8]
-             */
-            level?: boolean;
-            /**
-             * For EACH ITEM in the collection: Specifies the name of this shape.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.4]
-             */
-            name?: boolean;
-            /**
-             * For EACH ITEM in the collection: Specifies the rotation, in degrees, of the shape around the z-axis.
-                        A positive value indicates clockwise rotation, and a negative value indicates counterclockwise rotation.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.10]
-             */
-            rotation?: boolean;
-            /**
-             * For EACH ITEM in the collection: The distance, in points, from the top edge of the shape to the top edge of the slide.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.4]
-             */
-            top?: boolean;
-            /**
-             * For EACH ITEM in the collection: Returns the type of this shape. See {@link PowerPoint.ShapeType} for details.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.4]
-             */
-            type?: boolean;
-            /**
-             * For EACH ITEM in the collection: Specifies if the shape is visible.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.10]
-             */
-            visible?: boolean;
-            /**
-             * For EACH ITEM in the collection: Specifies the width, in points, of the shape. Throws an `InvalidArgument` exception when set with a negative value.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.4]
-             */
-            width?: boolean;
-            /**
-             * For EACH ITEM in the collection: Returns the z-order position of the shape, with 0 representing the bottom of the order stack. Every shape on a slide has a unique z-order, but
-                        each slide also has a unique z-order stack, so two shapes on separate slides could have the same z-order number.
-             *
-             * @remarks
-             * [Api set: PowerPointApi 1.8]
-             */
-            zOrderPosition?: boolean;
         }
         /**
          * Represents a shape group inside a presentation. To get the corresponding Shape object, use `ShapeGroup.shape`.

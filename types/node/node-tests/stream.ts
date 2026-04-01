@@ -591,6 +591,9 @@ addAbortSignal(new AbortSignal(), new Readable());
             },
         },
     });
+
+    // $ExpectType ReadableStream<any>
+    Readable.toWeb(readable, { type: "bytes" });
 }
 
 {
@@ -633,6 +636,8 @@ addAbortSignal(new AbortSignal(), new Readable());
     const duplex = new Duplex();
     // $ExpectType ReadableWritablePair<any, any>
     Duplex.toWeb(duplex);
+    // $ExpectType ReadableWritablePair<any, any>
+    Duplex.toWeb(duplex, { type: "bytes" });
 }
 
 {
@@ -814,6 +819,23 @@ async function testTransferringStreamWithPostMessage() {
 
     // $ExpectType void
     byobReader.releaseLock();
+}
+
+{
+    const stream = new ReadableStream({
+        type: "bytes",
+        pull(controller) {
+            const req = controller.byobRequest;
+            if (!req?.view) return;
+            (req.view as Uint8Array).set([42], 0);
+            req.respond(1);
+            controller.close();
+        },
+    });
+    const reader = stream.getReader({ mode: "byob" });
+    reader.read(new Uint8Array(new ArrayBuffer(8))).then(({ done, value }) => {
+        console.log(done, value);
+    });
 }
 
 async function testStreamComposeExample1() {

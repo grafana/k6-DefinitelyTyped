@@ -1302,7 +1302,9 @@ declare namespace OracleDB {
          *
          * @since 6.9
          */
-        beginSessionlessTransaction(opts: SessionlessTransactionOpts): SessionlessTransactionOpts["transactionId"];
+        beginSessionlessTransaction(
+            opts: SessionlessTransactionOpts,
+        ): Promise<SessionlessTransactionOpts["transactionId"]>;
         beginSessionlessTransaction(opts: SessionlessTransactionOpts, callback: (error: DBError) => void): void;
         /**
          * Stops the currently running operation on the connection.
@@ -1681,7 +1683,7 @@ declare namespace OracleDB {
         resumeSessionlessTransaction(
             transactionId: SessionlessTransactionOpts["transactionId"],
             resTxnOpts?: ResumeSessionlessTxnOpts,
-        ): SessionlessTransactionOpts["transactionId"];
+        ): Promise<SessionlessTransactionOpts["transactionId"]>;
         resumeSessionlessTransaction(callback: (error: DBError) => void): void;
         /**
          * Rolls back the current transaction in progress on the connection.
@@ -1760,7 +1762,7 @@ declare namespace OracleDB {
          *
          * @since 6.9
          */
-        suspendSessionlessTransaction(): void;
+        suspendSessionlessTransaction(): Promise<void>;
         suspendSessionlessTransaction(callback: (error: DBError) => void): void;
         /**
          * Unregister a Continuous Query Notification (CQN) subscription previously created with connection.subscribe().
@@ -2758,6 +2760,7 @@ declare namespace OracleDB {
         poolIncrement: number;
         poolTimeout: number;
         poolPingInterval: number;
+        poolPingTimeout: number;
         poolMaxPerShard: number;
         stmtCacheSize: number;
         sodaMetaDataCache: boolean;
@@ -3243,6 +3246,13 @@ declare namespace OracleDB {
          * @default 60
          */
         poolPingInterval?: number | undefined;
+        /**
+         * The number of milliseconds that a connection should wait for a response from connection.ping().
+         * This optional property overrides the oracledb.poolPingTimeout property.
+         *
+         * @default 5000
+         */
+        poolPingTimeout?: number | undefined;
         /**
          * The number of seconds after which idle connections (unused in the pool) may be terminated.
          * Idle connections are terminated only when the pool is accessed.

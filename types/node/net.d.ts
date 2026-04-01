@@ -34,6 +34,10 @@ declare module "node:net" {
         readable?: boolean | undefined;
         writable?: boolean | undefined;
         signal?: AbortSignal | undefined;
+        noDelay?: boolean | undefined;
+        keepAlive?: boolean | undefined;
+        keepAliveInitialDelay?: number | undefined;
+        blockList?: BlockList | undefined;
     }
     interface OnReadOpts {
         buffer: Uint8Array | (() => Uint8Array);
@@ -52,9 +56,6 @@ declare module "node:net" {
         hints?: number | undefined;
         family?: number | undefined;
         lookup?: LookupFunction | undefined;
-        noDelay?: boolean | undefined;
-        keepAlive?: boolean | undefined;
-        keepAliveInitialDelay?: number | undefined;
         /**
          * @since v18.13.0
          */
@@ -63,7 +64,6 @@ declare module "node:net" {
          * @since v18.13.0
          */
         autoSelectFamilyAttemptTimeout?: number | undefined;
-        blockList?: BlockList | undefined;
     }
     interface IpcSocketConnectOpts {
         path: string;
@@ -825,7 +825,7 @@ declare module "node:net" {
     function setDefaultAutoSelectFamily(value: boolean): void;
     /**
      * Gets the current default value of the `autoSelectFamilyAttemptTimeout` option of `socket.connect(options)`.
-     * The initial default value is `250` or the value specified via the command line option `--network-family-autoselection-attempt-timeout`.
+     * The initial default value is `500` or the value specified via the command line option `--network-family-autoselection-attempt-timeout`.
      * @returns The current default value of the `autoSelectFamilyAttemptTimeout` option.
      * @since v19.8.0, v18.8.0
      */

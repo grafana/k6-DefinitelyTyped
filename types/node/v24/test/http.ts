@@ -11,13 +11,13 @@ import * as url from "node:url";
     let server: http.Server = new http.Server();
 
     class MyIncomingMessage extends http.IncomingMessage {
-        foo: number;
+        foo!: number;
     }
 
     class MyServerResponse<Request extends http.IncomingMessage = http.IncomingMessage>
         extends http.ServerResponse<Request>
     {
-        foo: string;
+        foo!: string;
     }
 
     server = new http.Server({ IncomingMessage: MyIncomingMessage });
@@ -38,6 +38,7 @@ import * as url from "node:url";
         keepAliveTimeout: 100,
         keepAliveTimeoutBuffer: 200,
         headersTimeout: 50000,
+        optimizeEmptyRequests: true,
         requireHostHeader: false,
         rejectNonStandardBodyWrites: false,
         shouldUpgradeCallback(request) {
@@ -75,13 +76,13 @@ import * as url from "node:url";
     let bar: "bar";
 
     class MyIncomingMessage extends http.IncomingMessage {
-        foo: typeof foo;
+        foo!: typeof foo;
     }
 
     class MyServerResponse<
         Request extends MyIncomingMessage = MyIncomingMessage,
     > extends http.ServerResponse<Request> {
-        bar: typeof bar;
+        bar!: typeof bar;
 
         getFoo() {
             return this.req.foo;

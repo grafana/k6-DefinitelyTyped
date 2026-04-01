@@ -205,6 +205,7 @@ const runPromiseTests = async (): Promise<void> => {
             queueTimeout: 60000,
             sessionCallback: initSession,
             stmtCacheSize: 5,
+            poolPingTimeout: 5000,
             user: DB_USER,
         });
 
@@ -298,7 +299,7 @@ const runPromiseTests = async (): Promise<void> => {
         console.log("Testing pool.close()...");
 
         await pool.close(5);
-    } catch (err) {
+    } catch (err: any) {
         console.log(err.message);
     }
 };
@@ -822,11 +823,16 @@ export const version6_9Tests = async (): Promise<void> => {
     });
 
     const txnId = "testId";
-    await connection.beginSessionlessTransaction({ transactionId: txnId, timeout: 2, deferRoundTrip: true });
+    const id1 = await connection.beginSessionlessTransaction({
+        transactionId: txnId,
+        timeout: 2,
+        deferRoundTrip: true,
+    });
+    console.log(id1.length);
     await connection.execute("INSERT INTO TEST VALUES(1)", {}, { suspendOnSuccess: true });
-    await connection.suspendSessionlessTransaction();
-    await connection.resumeSessionlessTransaction(txnId, { deferRoundTrip: false });
-
+    await connection.suspendSessionlessTransaction().then();
+    const id2 = await connection.resumeSessionlessTransaction(txnId, { deferRoundTrip: false });
+    console.log(id2.length);
     console.log(connection.ltxid);
 
     await oracledb.createPool({

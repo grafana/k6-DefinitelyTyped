@@ -1,4 +1,4 @@
-// For Library Version: 1.143.0
+// For Library Version: 1.145.0
 
 declare module "sap/f/library" {
   export interface IShellBar {
@@ -1778,7 +1778,7 @@ declare module "sap/m/library" {
      */
     L = "L",
     /**
-     * Small: Recommended for smaller controls, such as {@link sap.m.Switch} or {@link sap.m.Checkbox}. If there
+     * Small: Recommended for smaller controls, such as {@link sap.m.Switch} or {@link sap.m.CheckBox}. If there
      * is limited space, only the label is wrapped. The input control is always right-aligned horizontally and
      * middle-aligned vertically.
      */
@@ -3997,6 +3997,12 @@ declare module "sap/m/library" {
    */
   export enum TimePickerMaskMode {
     /**
+     * The mask will always be enforced for any time patterns. **Note:** The mask functions correctly only with
+     * fixed-length time formats. Using the `Enforce` value with time formats that do not have a fixed length
+     * may lead to unpredictable behavior.
+     */
+    Enforce = "Enforce",
+    /**
      * The mask is disabled for the `sap.m.TimePicker`.
      */
     Off = "Off",
@@ -4157,7 +4163,7 @@ declare module "sap/m/library" {
     Uploading = "Uploading",
   }
   /**
-   * Type of the upload {@link sap.m.UploadSetItem}.
+   * Type of the upload {@link sap.m.upload.UploadSetItem}.
    *
    * This enum is part of the 'sap/m/library' module export and must be accessed by the property 'UploadType'.
    */
@@ -4540,6 +4546,20 @@ declare module "sap/m/library" {
        */
       getVerticalScrolling?(): boolean;
       /**
+       * Optional hook that will be executed when the panel is used by a `sap.m.p13n.Popup` that is called before
+       * the popup is closed
+       *
+       * @since 1.145
+       *
+       * @returns A Promise that is fullfilled if the panel is ready to be closed
+       */
+      onBeforeClose?(
+        /**
+         * reason for closing the container
+         */
+        sReason: string
+      ): Promise<any>;
+      /**
        * Optional hook that will be executed when the panel is used by a `sap.m.p13n.Popup` that may trigger a
        * reset on the panel
        */
@@ -4671,7 +4691,7 @@ declare module "sap/m/library" {
          */
         L = "L",
         /**
-         * Small: Recommended for smaller controls, such as {@link sap.m.Switch} or {@link sap.m.Checkbox}. If there
+         * Small: Recommended for smaller controls, such as {@link sap.m.Switch} or {@link sap.m.CheckBox}. If there
          * is limited space, only the label is wrapped. The input control is always right-aligned horizontally and
          * middle-aligned vertically.
          */
@@ -14767,7 +14787,6 @@ declare module "sap/m/ColorPalette" {
      * The last selected color in the ColorPalette.
      *
      * @since 1.122
-     * @experimental As of version 1.122. this property is in a beta state.
      *
      * @returns Value of property `selectedColor`
      */
@@ -14811,7 +14830,6 @@ declare module "sap/m/ColorPalette" {
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
      * @since 1.122
-     * @experimental As of version 1.122. this property is in a beta state.
      *
      * @returns Reference to `this` in order to allow method chaining
      */
@@ -14835,7 +14853,6 @@ declare module "sap/m/ColorPalette" {
      * The last selected color in the ColorPalette.
      *
      * @since 1.122
-     * @experimental As of version 1.122. this property is in a beta state.
      */
     selectedColor?: CSSColor | PropertyBindingInfo | `{${string}}`;
 
@@ -15223,7 +15240,6 @@ declare module "sap/m/ColorPalettePopover" {
      * The last selected color in the ColorPalette.
      *
      * @since 1.122
-     * @experimental As of version 1.122. this property is in a beta state.
      *
      * @returns Value of property `selectedColor`
      */
@@ -15356,7 +15372,6 @@ declare module "sap/m/ColorPalettePopover" {
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
      * @since 1.122
-     * @experimental As of version 1.122. this property is in a beta state.
      *
      * @returns Reference to `this` in order to allow method chaining
      */
@@ -15442,7 +15457,6 @@ declare module "sap/m/ColorPalettePopover" {
      * The last selected color in the ColorPalette.
      *
      * @since 1.122
-     * @experimental As of version 1.122. this property is in a beta state.
      */
     selectedColor?: CSSColor | PropertyBindingInfo | `{${string}}`;
 
@@ -19298,8 +19312,9 @@ declare module "sap/m/DatePicker" {
    *      binding the `value` property by using types
    * ```javascript
    *
+   * // UI5Date imported from sap/ui/core/date/UI5Date
    * new sap.ui.model.json.JSONModel({
-   *     date: sap.ui.core.date.UI5Date.getInstance(2022,10,10,10,10,10)
+   *     date: UI5Date.getInstance(2022,10,10,10,10,10)
    * });
    *
    * new sap.m.DatePicker({
@@ -22164,7 +22179,10 @@ declare module "sap/m/DateTimePicker" {
    *      binding the `value` property by using types
    * ```javascript
    *
-   * new sap.ui.model.json.JSONModel({date: sap.ui.core.date.UI5Date.getInstance(2022,10,10,12,10,10)});
+   * // UI5Date imported from sap/ui/core/date/UI5Date
+   * new sap.ui.model.json.JSONModel({
+   *     date: UI5Date.getInstance(2022,10,10,12,10,10)
+   * });
    *
    * new sap.m.DateTimePicker({
    *     value: {
@@ -39792,6 +39810,10 @@ declare module "sap/m/IllustratedMessage" {
    * and the available space of its parent container. Some of the structural elements are displayed differently
    * or are omitted in the different breakpoint sizes (XS, S, M, L).
    *
+   * **Note:** When using automatic sizing (see {@link #getIllustrationSize illustrationSize} property), ensure
+   * the parent container has a constrained width (for example, an explicit `width`, a `max-width`, or a width
+   * inherited from its parent). Containers without width constraints can cause flickering during resize operations.
+   *
    * @since 1.98
    */
   export default class IllustratedMessage extends Control {
@@ -39960,7 +39982,7 @@ declare module "sap/m/IllustratedMessage" {
      *
      * Default value is `false`.
      *
-     * @experimental As of version 1.138.
+     * @since 1.138
      *
      * @returns Value of property `decorative`
      */
@@ -40041,6 +40063,13 @@ declare module "sap/m/IllustratedMessage" {
      *
      * As `IllustratedMessage` adapts itself around the `Illustration`, the other elements of the control are
      * displayed differently on the different breakpoints/illustration sizes.
+     *
+     * When set to `Auto` (default), the illustration size is determined by the available space in the parent
+     * container.
+     *
+     * **Note:** Auto sizing requires the parent container to have a width constraint — for example, an explicit
+     * `width`, a `max-width`, or a width inherited from its parent. Containers without width constraints may
+     * cause flickering during resize operations.
      *
      * Default value is `Auto`.
      *
@@ -40317,6 +40346,13 @@ declare module "sap/m/IllustratedMessage" {
      * As `IllustratedMessage` adapts itself around the `Illustration`, the other elements of the control are
      * displayed differently on the different breakpoints/illustration sizes.
      *
+     * When set to `Auto` (default), the illustration size is determined by the available space in the parent
+     * container.
+     *
+     * **Note:** Auto sizing requires the parent container to have a width constraint — for example, an explicit
+     * `width`, a `max-width`, or a width inherited from its parent. Containers without width constraints may
+     * cause flickering during resize operations.
+     *
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
      * Default value is `Auto`.
@@ -40464,6 +40500,13 @@ declare module "sap/m/IllustratedMessage" {
      * As `IllustratedMessage` adapts itself around the `Illustration`, the other elements of the control are
      * displayed differently on the different breakpoints/illustration sizes.
      *
+     * When set to `Auto` (default), the illustration size is determined by the available space in the parent
+     * container.
+     *
+     * **Note:** Auto sizing requires the parent container to have a width constraint — for example, an explicit
+     * `width`, a `max-width`, or a width inherited from its parent. Containers without width constraints may
+     * cause flickering during resize operations.
+     *
      * @since 1.98
      */
     illustrationSize?:
@@ -40530,7 +40573,7 @@ declare module "sap/m/IllustratedMessage" {
      * When set to true, the attributes `role="presentation"` and `aria-hidden="true"` are applied to the SVG
      * element.
      *
-     * @experimental As of version 1.138.
+     * @since 1.138
      */
     decorative?: boolean | PropertyBindingInfo | `{${string}}`;
 
@@ -41140,7 +41183,7 @@ declare module "sap/m/Illustration" {
      *
      * Default value is `false`.
      *
-     * @experimental As of version 1.138.
+     * @since 1.138
      *
      * @returns Value of property `decorative`
      */
@@ -41226,7 +41269,7 @@ declare module "sap/m/Illustration" {
      *
      * Default value is `false`.
      *
-     * @experimental As of version 1.138.
+     * @since 1.138
      *
      * @returns Reference to `this` in order to allow method chaining
      */
@@ -41316,7 +41359,7 @@ declare module "sap/m/Illustration" {
     /**
      * Defines whether the illustration is decorative.
      *
-     * @experimental As of version 1.138.
+     * @since 1.138
      */
     decorative?: boolean | PropertyBindingInfo | `{${string}}`;
 
@@ -52154,7 +52197,8 @@ declare module "sap/m/ListBase" {
      *     will let the table scroll to the top.
      * 	 - A transparent toolbar design is not supported for sticky bars. The toolbar will automatically get
      *     an intransparent background color.
-     * 	 - This feature supports only the default height of the toolbar control.
+     * 	 - This feature supports only the default height of the toolbar control and the column headers.
+     * 	 - When sticky group headers are enabled, wrapping in the column headers is not supported.
      *
      * @since 1.58
      *
@@ -52896,7 +52940,8 @@ declare module "sap/m/ListBase" {
      *     will let the table scroll to the top.
      * 	 - A transparent toolbar design is not supported for sticky bars. The toolbar will automatically get
      *     an intransparent background color.
-     * 	 - This feature supports only the default height of the toolbar control.
+     * 	 - This feature supports only the default height of the toolbar control and the column headers.
+     * 	 - When sticky group headers are enabled, wrapping in the column headers is not supported.
      *
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
@@ -53184,7 +53229,8 @@ declare module "sap/m/ListBase" {
      *     will let the table scroll to the top.
      * 	 - A transparent toolbar design is not supported for sticky bars. The toolbar will automatically get
      *     an intransparent background color.
-     * 	 - This feature supports only the default height of the toolbar control.
+     * 	 - This feature supports only the default height of the toolbar control and the column headers.
+     * 	 - When sticky group headers are enabled, wrapping in the column headers is not supported.
      *
      * @since 1.58
      */
@@ -56070,7 +56116,7 @@ declare module "sap/m/Menu" {
     /**
      * Returns an array containing the selected menu items. **Note:** Only items with `selected` property set
      * that are members of `MenuItemGroup` with `ItemSelectionMode` property set to {@link sap.ui.core.ItemSelectionMode.SingleSelect }
-     * or {@link sap.ui.unified.ItemSelectionMode.MultiSelect}> are taken into account.
+     * or {@link sap.ui.core.ItemSelectionMode.MultiSelect}> are taken into account.
      *
      * @since 1.127.0
      *
@@ -57429,7 +57475,7 @@ declare module "sap/m/MenuItem" {
      *
      * Determines whether the `MenuItem` is selected. A selected `MenuItem` has a check mark rendered at its
      * end. **Note: ** selection functionality works only if the menu item is a member of `MenuItemGroup` with
-     * `itemSelectionMode` set to {@link sap.ui.core.ItemSelectionMode.SingleSelect} or {@link sap.ui.unified.ItemSelectionMode.MultiSelect}.
+     * `itemSelectionMode` set to {@link sap.ui.core.ItemSelectionMode.SingleSelect} or {@link sap.ui.core.ItemSelectionMode.MultiSelect}.
      *
      * Default value is `false`.
      *
@@ -57807,7 +57853,7 @@ declare module "sap/m/MenuItem" {
     /**
      * Determines whether the `MenuItem` is selected. A selected `MenuItem` has a check mark rendered at its
      * end. **Note: ** selection functionality works only if the menu item is a member of `MenuItemGroup` with
-     * `itemSelectionMode` set to {@link sap.ui.core.ItemSelectionMode.SingleSelect} or {@link sap.ui.unified.ItemSelectionMode.MultiSelect}.
+     * `itemSelectionMode` set to {@link sap.ui.core.ItemSelectionMode.SingleSelect} or {@link sap.ui.core.ItemSelectionMode.MultiSelect}.
      *
      * @since 1.127.0
      */
@@ -58189,7 +58235,7 @@ declare module "sap/m/MessageBox" {
      */
     alert(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -58318,7 +58364,7 @@ declare module "sap/m/MessageBox" {
      */
     confirm(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -58444,7 +58490,7 @@ declare module "sap/m/MessageBox" {
      */
     error(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -58567,7 +58613,7 @@ declare module "sap/m/MessageBox" {
      */
     information(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -58695,7 +58741,7 @@ declare module "sap/m/MessageBox" {
      */
     show(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -58822,7 +58868,7 @@ declare module "sap/m/MessageBox" {
      */
     success(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -58945,7 +58991,7 @@ declare module "sap/m/MessageBox" {
      */
     warning(
       /**
-       * Message to be displayed in the alert dialog. The usage of sap.core.Control as vMessage is deprecated
+       * Message to be displayed in the alert dialog. The usage of sap.ui.core.Control as vMessage is deprecated
        * since version 1.30.4.
        */
       vMessage: string,
@@ -75574,8 +75620,6 @@ declare module "sap/m/OverflowToolbar" {
 
   import { IBar } from "sap/m/library";
 
-  import Control from "sap/ui/core/Control";
-
   import ElementMetadata from "sap/ui/core/ElementMetadata";
 
   import { PropertyBindingInfo } from "sap/ui/base/ManagedObject";
@@ -75732,22 +75776,6 @@ declare module "sap/m/OverflowToolbar" {
      * @since 1.40
      */
     closeOverflow(): void;
-    /**
-     * This method is a hook for the RenderManager that gets called during the rendering of child Controls.
-     * It allows to add, remove and update existing accessibility attributes (ARIA) of those controls.
-     *
-     * @ui5-protected Do not call from applications (only from related classes in the framework)
-     */
-    enhanceAccessibilityState(
-      /**
-       * The Control that gets rendered by the RenderManager
-       */
-      oElement: Control,
-      /**
-       * The mapping of "aria-" prefixed attributes
-       */
-      mAriaProps: object
-    ): void;
     /**
      * Gets current value of property {@link #getAsyncMode asyncMode}.
      *
@@ -77337,6 +77365,8 @@ declare module "sap/m/p13n/Popup" {
 
   import { p13n, P13nPopupMode } from "sap/m/library";
 
+  import Event from "sap/ui/base/Event";
+
   import ElementMetadata from "sap/ui/core/ElementMetadata";
 
   import { CSSSize } from "sap/ui/core/library";
@@ -77345,8 +77375,6 @@ declare module "sap/m/p13n/Popup" {
     PropertyBindingInfo,
     AggregationBindingInfo,
   } from "sap/ui/base/ManagedObject";
-
-  import Event from "sap/ui/base/Event";
 
   /**
    * This control can be used to show personalization-related content in different popup controls.
@@ -77492,6 +77520,53 @@ declare module "sap/m/p13n/Popup" {
       oListener?: object
     ): this;
     /**
+     * Attaches event handler `fnFunction` to the {@link #event:open open} event of this `sap.m.p13n.Popup`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.p13n.Popup` itself.
+     *
+     * This event is fired after the dialog has been opened.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachOpen(
+      /**
+       * An application-specific payload object that will be passed to the event handler along with the event
+       * object when firing the event
+       */
+      oData: object,
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.p13n.Popup` itself
+       */
+      oListener?: object
+    ): this;
+    /**
+     * Attaches event handler `fnFunction` to the {@link #event:open open} event of this `sap.m.p13n.Popup`.
+     *
+     * When called, the context of the event handler (its `this`) will be bound to `oListener` if specified,
+     * otherwise it will be bound to this `sap.m.p13n.Popup` itself.
+     *
+     * This event is fired after the dialog has been opened.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    attachOpen(
+      /**
+       * The function to be called when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object to call the event handler with. Defaults to this `sap.m.p13n.Popup` itself
+       */
+      oListener?: object
+    ): this;
+    /**
      * Destroys all the additionalButtons in the aggregation {@link #getAdditionalButtons additionalButtons}.
      *
      *
@@ -77524,6 +77599,24 @@ declare module "sap/m/p13n/Popup" {
       oListener?: object
     ): this;
     /**
+     * Detaches event handler `fnFunction` from the {@link #event:open open} event of this `sap.m.p13n.Popup`.
+     *
+     * The passed function and listener object must match the ones used for event registration.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    detachOpen(
+      /**
+       * The function to be called, when the event occurs
+       */
+      fnFunction: (p1: Event) => void,
+      /**
+       * Context object on which the given function had to be called
+       */
+      oListener?: object
+    ): this;
+    /**
      * Fires event {@link #event:close close} to attached listeners.
      *
      * @ui5-protected Do not call from applications (only from related classes in the framework)
@@ -77535,6 +77628,19 @@ declare module "sap/m/p13n/Popup" {
        * Parameters to pass along with the event
        */
       mParameters?: Popup$CloseEventParameters
+    ): this;
+    /**
+     * Fires event {@link #event:open open} to attached listeners.
+     *
+     * @ui5-protected Do not call from applications (only from related classes in the framework)
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    fireOpen(
+      /**
+       * Parameters to pass along with the event
+       */
+      mParameters?: object
     ): this;
     /**
      * Gets content of aggregation {@link #getAdditionalButtons additionalButtons}.
@@ -77811,6 +77917,11 @@ declare module "sap/m/p13n/Popup" {
       | `{${string}}`;
 
     /**
+     * This event is fired after the dialog has been opened.
+     */
+    open?: (oEvent: Event) => void;
+
+    /**
      * This event is fired after the dialog has been closed.
      */
     close?: (oEvent: Popup$CloseEvent) => void;
@@ -77830,6 +77941,16 @@ declare module "sap/m/p13n/Popup" {
    * Event object of the Popup#close event.
    */
   export type Popup$CloseEvent = Event<Popup$CloseEventParameters, Popup>;
+
+  /**
+   * Parameters of the Popup#open event.
+   */
+  export interface Popup$OpenEventParameters {}
+
+  /**
+   * Event object of the Popup#open event.
+   */
+  export type Popup$OpenEvent = Event<Popup$OpenEventParameters, Popup>;
 }
 
 declare module "sap/m/p13n/QueryPanel" {
@@ -86128,7 +86249,7 @@ declare module "sap/m/Page" {
      *
      * The (optional) custom header of this page. Use this aggregation only when a custom header is constructed
      * where the default header consisting of title text + nav button is not sufficient. If this aggregation
-     * is set, the simple properties "title", "showNavButton", "NavButtonText" and "icon" are not used.
+     * is set, the simple properties "title", "showNavButton", "navButtonText" and "icon" are not used.
      */
     getCustomHeader(): IBar;
     /**
@@ -86955,7 +87076,7 @@ declare module "sap/m/Page" {
     /**
      * The (optional) custom header of this page. Use this aggregation only when a custom header is constructed
      * where the default header consisting of title text + nav button is not sufficient. If this aggregation
-     * is set, the simple properties "title", "showNavButton", "NavButtonText" and "icon" are not used.
+     * is set, the simple properties "title", "showNavButton", "navButtonText" and "icon" are not used.
      */
     customHeader?: IBar;
 
@@ -89124,6 +89245,11 @@ declare module "sap/m/PDFViewer" {
      *  Optionally, this property can also be set to a data URI path or a blob URL, provided that this data
      * URI or blob URL is allowed in advance. For more information about URL filtering, see {@link https://ui5.sap.com/#/topic/91f3768f6f4d1014b6dd926db0e91070 URLList Validator Filtering}.
      *
+     * Source Validation: When the source is set, the PDFViewer automatically validates the resource using a
+     * GET request to ensure it exists and is accessible. This validation:
+     * 	 - Prevents loading invalid or non-existent PDF files
+     * 	 - If validation fails, error content is displayed instead of attempting PDF load
+     *
      *
      * @returns Value of property `source`
      */
@@ -89373,6 +89499,11 @@ declare module "sap/m/PDFViewer" {
      *  Optionally, this property can also be set to a data URI path or a blob URL, provided that this data
      * URI or blob URL is allowed in advance. For more information about URL filtering, see {@link https://ui5.sap.com/#/topic/91f3768f6f4d1014b6dd926db0e91070 URLList Validator Filtering}.
      *
+     * Source Validation: When the source is set, the PDFViewer automatically validates the resource using a
+     * GET request to ensure it exists and is accessible. This validation:
+     * 	 - Prevents loading invalid or non-existent PDF files
+     * 	 - If validation fails, error content is displayed instead of attempting PDF load
+     *
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
      *
@@ -89440,6 +89571,11 @@ declare module "sap/m/PDFViewer" {
      * Specifies the path to the PDF file to display. Can be set to a relative or an absolute path.
      *  Optionally, this property can also be set to a data URI path or a blob URL, provided that this data
      * URI or blob URL is allowed in advance. For more information about URL filtering, see {@link https://ui5.sap.com/#/topic/91f3768f6f4d1014b6dd926db0e91070 URLList Validator Filtering}.
+     *
+     * Source Validation: When the source is set, the PDFViewer automatically validates the resource using a
+     * GET request to ensure it exists and is accessible. This validation:
+     * 	 - Prevents loading invalid or non-existent PDF files
+     * 	 - If validation fails, error content is displayed instead of attempting PDF load
      */
     source?: URI | PropertyBindingInfo | `{${string}}`;
 
@@ -97353,7 +97489,7 @@ declare module "sap/m/plugins/UploadSetwithTable" {
    *  The following controls support this plugin:
    * 	 - {@link sap.ui.mdc.Table MDC Table}
    * 	 - {@link sap.m.Table Responsive Table}
-   * 	 - {@link sap.m.GridTable Grid Table}
+   * 	 - {@link sap.ui.table.Table Grid Table}
    * 	 - {@link sap.ui.table.TreeTable Tree Table}
    *
    * Consider the following before using the plugin:
@@ -99156,6 +99292,8 @@ declare module "sap/m/plugins/UploadSetwithTable" {
   }
   /**
    * This property type is used to define the file name validation configuration. Object is passed to {@link sap.m.plugins.UploadSetwithTable fileNameValidationConfig property}
+   *
+   * @since 1.136
    */
   export type FilenameValidationConfig = {
     /**
@@ -104246,7 +104384,8 @@ declare module "sap/m/QuickViewPage" {
 
   /**
    * QuickViewPage consists of a page header, an avatar, an object name with short description, and an object
-   * information divided in groups. The control uses the sap.m.SimpleForm control to display information.
+   * information divided in groups. The control uses the sap.ui.layout.form.SimpleForm control to display
+   * information.
    *
    * @since 1.28.11
    */
@@ -104839,14 +104978,12 @@ declare module "sap/m/RadioButton" {
    * 	 - When the options are mutually exclusive e.g. ON/OFF. Use a {@link sap.m.Switch switch} instead.
    * 	 - Avoid using horizontally aligned radio buttons as they will be cut off on phones.
    *
-   * **Note:** The order in which the RadioButtons will be selected one after another is determined upon instantiation
-   * of the control. This order is consistent with the ARIA attributes for position, which the same button
-   * will receive when added to specific group.
+   * **Note:** The order in which the RadioButtons will be traversed with keyboard arrow keys is determined
+   * based on their order in the document.
    *
-   * **Example:** If three buttons are created (`button1, button2, button3`) in consecutive order, initially
-   * they will have the same positions and TAB order. However if after that `button1` and `button3` are moved
-   * to a new group and then `button2` is added to the same group, their TAB order and position in this group
-   * will be `button1, button3, button2`.
+   * **Example:** If there are three buttons of the same group (`button1, button2, button3`) initially and
+   * then a new button `button4` is added on the second position, the order will be `button1, button4, button2,
+   * button3`.
    */
   export default class RadioButton
     extends Control
@@ -110265,7 +110402,11 @@ declare module "sap/m/SearchField" {
 
   import { IShellBar } from "sap/f/library";
 
-  import { IToolbarInteractiveControl } from "sap/m/library";
+  import {
+    IToolbarInteractiveControl,
+    IOverflowToolbarContent,
+    OverflowToolbarConfig,
+  } from "sap/m/library";
 
   import SuggestionItem from "sap/m/SuggestionItem";
 
@@ -110296,11 +110437,16 @@ declare module "sap/m/SearchField" {
    */
   export default class SearchField
     extends Control
-    implements IFormContent, IShellBar, IToolbarInteractiveControl
+    implements
+      IFormContent,
+      IShellBar,
+      IToolbarInteractiveControl,
+      IOverflowToolbarContent
   {
     __implements__sap_ui_core_IFormContent: boolean;
     __implements__sap_f_IShellBar: boolean;
     __implements__sap_m_IToolbarInteractiveControl: boolean;
+    __implements__sap_m_IOverflowToolbarContent: boolean;
     /**
      * Constructor for a new SearchField.
      *
@@ -110803,6 +110949,14 @@ declare module "sap/m/SearchField" {
      * @returns Value of property `maxLength`
      */
     getMaxLength(): int;
+    /**
+     * Enables the `sap.m.SearchField` to be used inside sap.m.OverflowToolbar. Required by the {@link sap.m.IOverflowToolbarContent }
+     * interface.
+     *
+     *
+     * @returns Configuration information for the `sap.m.IOverflowToolbarContent` interface.
+     */
+    getOverflowToolbarConfig(): OverflowToolbarConfig;
     /**
      * Gets current value of property {@link #getPlaceholder placeholder}.
      *
@@ -112445,6 +112599,21 @@ declare module "sap/m/SegmentedButton" {
      * Reference to the item, that has been selected.
      */
     item?: SegmentedButtonItem;
+
+    /**
+     * Reference to the previously selected item (if any).
+     */
+    previousItem?: SegmentedButtonItem;
+
+    /**
+     * Key of the selected item (if any).
+     */
+    selectedKey?: string;
+
+    /**
+     * Key of the previously selected item (if any).
+     */
+    previousKey?: string;
   }
 
   /**
@@ -130496,6 +130665,11 @@ declare module "sap/m/SinglePlanningCalendar" {
      * All appointments with changed selected state.
      */
     appointments?: CalendarAppointment[];
+
+    /**
+     * The original browser event.
+     */
+    originalEvent?: object;
   }
 
   /**
@@ -135805,7 +135979,8 @@ declare module "sap/m/StandardListItem" {
     /**
      * Gets current value of property {@link #getIcon icon}.
      *
-     * Defines the list item icon.
+     * Defines the list item icon. **Note:** The icon is decorative. For more advanced use cases and configuration
+     * options, use the `avatar` aggregation.
      *
      *
      * @returns Value of property `icon`
@@ -136016,7 +136191,8 @@ declare module "sap/m/StandardListItem" {
     /**
      * Sets a new value for property {@link #getIcon icon}.
      *
-     * Defines the list item icon.
+     * Defines the list item icon. **Note:** The icon is decorative. For more advanced use cases and configuration
+     * options, use the `avatar` aggregation.
      *
      * When called with a value of `null` or `undefined`, the default value of the property will be restored.
      *
@@ -136251,7 +136427,8 @@ declare module "sap/m/StandardListItem" {
     description?: string | PropertyBindingInfo;
 
     /**
-     * Defines the list item icon.
+     * Defines the list item icon. **Note:** The icon is decorative. For more advanced use cases and configuration
+     * options, use the `avatar` aggregation.
      */
     icon?: URI | PropertyBindingInfo | `{${string}}`;
 
@@ -150641,7 +150818,8 @@ declare module "sap/m/TimePicker" {
    *      binding the `value` property by using types
    * ```javascript
    *
-   * new sap.ui.model.json.JSONModel({date: sap.ui.core.date.UI5Date.getInstance(2022,10,10,10,15,10)});
+   * // UI5Date imported from sap/ui/core/date/UI5Date
+   * new sap.ui.model.json.JSONModel({date: UI5Date.getInstance(2022,10,10,10,15,10)});
    *
    * new sap.m.TimePicker({
    *     value: {
@@ -151546,6 +151724,22 @@ declare module "sap/m/TimePicker" {
      * @returns Reference to `this` for method chaining
      */
     setSupport2400(bSupport2400: boolean): this;
+    /**
+     * Sets a new value for property {@link #getTitle title}.
+     *
+     * Displays the text of the general picker label and is read by screen readers. It is visible only on phone.
+     *
+     * When called with a value of `null` or `undefined`, the default value of the property will be restored.
+     *
+     *
+     * @returns Reference to `this` in order to allow method chaining
+     */
+    setTitle(
+      /**
+       * New value for property `title`
+       */
+      sTitle?: string
+    ): this;
   }
   /**
    * Describes the settings that can be provided to the TimePicker constructor.
@@ -152515,6 +152709,7 @@ declare module "sap/m/Title" {
   import { default as Control, $ControlSettings } from "sap/ui/core/Control";
 
   import {
+    ITitle,
     IShrinkable,
     AccessibilityInfo,
     ITitleContent,
@@ -152563,8 +152758,9 @@ declare module "sap/m/Title" {
    */
   export default class Title
     extends Control
-    implements IShrinkable, IToolbarInteractiveControl
+    implements ITitle, IShrinkable, IToolbarInteractiveControl
   {
+    __implements__sap_ui_core_ITitle: boolean;
     __implements__sap_ui_core_IShrinkable: boolean;
     __implements__sap_m_IToolbarInteractiveControl: boolean;
     /**
@@ -155355,13 +155551,16 @@ declare module "sap/m/Tokenizer" {
 declare module "sap/m/Toolbar" {
   import { default as Control, $ControlSettings } from "sap/ui/core/Control";
 
-  import { Toolbar as Toolbar1, ID, CSSSize } from "sap/ui/core/library";
+  import {
+    Toolbar as Toolbar1,
+    ID,
+    CSSSize,
+    ITitle,
+  } from "sap/ui/core/library";
 
   import { IBar, ToolbarDesign, ToolbarStyle } from "sap/m/library";
 
   import ElementMetadata from "sap/ui/core/ElementMetadata";
-
-  import Title from "sap/m/Title";
 
   import {
     PropertyBindingInfo,
@@ -155705,21 +155904,23 @@ declare module "sap/m/Toolbar" {
      */
     getStyle(): ToolbarStyle;
     /**
-     * Returns the first sap.m.Title control instance inside the toolbar for the accessibility
+     * Returns the first visible control inside the toolbar that implements the {@link sap.ui.core.ITitle} interface.
      *
      * @since 1.44
      * @ui5-protected Do not call from applications (only from related classes in the framework)
      *
-     * @returns The `sap.m.Title` instance or undefined
+     * @returns The visible control implementing {@link sap.ui.core.ITitle}, or `undefined` if none exists.
      */
-    getTitleControl(): Title | undefined;
+    getTitleControl(): ITitle | undefined;
     /**
-     * Returns the first sap.m.Title control id inside the toolbar for the accessibility
+     * Returns the ID of the first visible control inside the toolbar that implements the {@link sap.ui.core.ITitle }
+     * interface.
      *
      * @since 1.28
      * @ui5-protected Do not call from applications (only from related classes in the framework)
      *
-     * @returns The `sap.m.Title` ID
+     * @returns The ID of the visible control implementing {@link sap.ui.core.ITitle}, or an empty string if
+     * none exists.
      */
     getTitleId(): ID;
     /**
@@ -157368,8 +157569,7 @@ declare module "sap/m/upload/FilePreviewDialog" {
    * Overview:
    *
    * Dialog with a carousel to preview files uploaded using the UploadSetwithTable control. This Element should
-   * only be used within the {@link sap.m.upload.UploadSetwithTable UploadSetwithTable} control or {@link sap.m.plugins.UploadSetwithTable UploadSetwithTable }
-   * Plugin as an association.
+   * only be used within the {@link sap.m.plugins.UploadSetwithTable UploadSetwithTable} Plugin as an association.
    *
    * Supported File Types for Preview:
    *
@@ -169984,7 +170184,7 @@ declare module "sap/m/VariantManagement" {
      */
     getShowSaveAs(): boolean;
     /**
-     * Retrieves for the controls {@link sap.ui.comp.SmartVariantManagement} and {@link sap.ui.fl.variants.VariantManagement }
+     * Retrieves for the controls {@link sap.ui.comp.smartvariants.SmartVariantManagement} and {@link sap.ui.fl.variants.VariantManagement }
      * the Standard variant. For all other scenarios the first visible variant will be returned, or `null`
      * if there are none.
      *
@@ -174064,6 +174264,53 @@ declare namespace sap {
    * @since 1.4
    */
   namespace m {
+    /**
+     * Helper Class for implementing additional contexts of the Bar. e.g. in sap.m.Dialog
+     *
+     * @ui5-protected DO NOT USE IN APPLICATIONS (only for related classes in the framework)
+     */
+    class BarInAnyContentEnabler
+      extends /* was: sap.m.BarInPageEnabler */ Object
+    {
+      /**
+       * @ui5-protected Do not call from applications (only from related classes in the framework)
+       */
+      protected constructor();
+
+      /**
+       * Creates a new subclass of class sap.m.BarInAnyContentEnabler with name `sClassName` and enriches it with
+       * the information contained in `oClassInfo`.
+       *
+       * `oClassInfo` might contain the same kind of information as described in {@link sap.m.BarInPageEnabler.extend}.
+       *
+       * @ui5-protected Do not call from applications (only from related classes in the framework)
+       *
+       * @returns Created class / constructor function
+       */
+      static extend<T extends Record<string, unknown>>(
+        /**
+         * Name of the class being created
+         */
+        sClassName: string,
+        /**
+         * Object literal with information about the class
+         */
+        oClassInfo?: ClassInfo<T, BarInAnyContentEnabler>,
+        /**
+         * Constructor function for the metadata object; if not given, it defaults to the metadata implementation
+         * used by this class
+         */
+        FNMetaImpl?: Function
+      ): Function;
+      /**
+       * Returns a metadata object for class sap.m.BarInAnyContentEnabler.
+       *
+       * @ui5-protected Do not call from applications (only from related classes in the framework)
+       *
+       * @returns Metadata object describing this class
+       */
+      static getMetadata(): import("sap/ui/base/Metadata").default;
+    }
     /**
      * The public facade of the {@link sap.m.SelectionDetailsItem} element.
      *

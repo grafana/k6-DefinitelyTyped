@@ -238,10 +238,10 @@ async function testPromisify() {
     const disposable = fs.mkdtempDisposableSync("/tmp/foo-");
     // $ExpectType string
     disposable.path;
-    // $ExpectType Promise<void>
+    // $ExpectType void
     disposable.remove();
-    // $ExpectType Promise<void>
-    disposable[Symbol.asyncDispose]();
+    // $ExpectType void
+    disposable[Symbol.dispose]();
 
     fs.promises.mkdtempDisposable("/tmp/foo-").then((result) => {
         // $ExpectType string
@@ -267,6 +267,7 @@ async function testPromisify() {
         persistent: true,
         encoding: "utf8",
         signal: new AbortSignal(),
+        ignore: (filename) => filename.startsWith("_"),
     }, (event, filename) => {
         console.log(event, filename);
     });
