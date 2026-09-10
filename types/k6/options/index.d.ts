@@ -119,6 +119,12 @@ export interface Options {
     /** Throw error on failed HTTP request. */
     throw?: boolean;
 
+    /**
+     * Fetch missing intermediate TLS certificates through Authority Information Access (AIA).
+     * Disabled by default. Has no effect when `insecureSkipTLSVerify` is true.
+     */
+    tlsAIAFetch?: boolean;
+
     /** TLS client certificates. */
     tlsAuth?: Certificate[];
 
