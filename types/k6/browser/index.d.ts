@@ -1672,13 +1672,14 @@ export interface ElementHandle extends JSHandle {
 
     /**
      * Returns when the child element matching `selector` satisfies the `state`.
+     * Returns `null` if the element is absent and the state is `hidden` or `detached`.
      * @param selector A selector to query for.
      * @param options Wait options.
      */
     waitForSelector(
         selector: string,
         options?: { state?: ElementState } & StrictnessOptions & TimeoutOptions,
-    ): Promise<ElementHandle>;
+    ): Promise<ElementHandle | null>;
 }
 
 /**
@@ -2153,12 +2154,12 @@ export interface Frame {
      * Wait for the given selector to match the waiting criteria.
      * @param selector The selector to use.
      * @param options The options to use.
-     * @returns The first element found that matches the selector.
+     * @returns The first matching element, or `null` if absent when waiting for `hidden` or `detached`.
      */
     waitForSelector(
         selector: string,
         options?: ElementStateFilter & TimeoutOptions & StrictnessOptions,
-    ): Promise<ElementHandle>;
+    ): Promise<ElementHandle | null>;
 
     /**
      * Wait for the given timeout to elapse.
@@ -5959,6 +5960,7 @@ export interface Page {
      * locator.waitFor([options]) instead.
      *
      * Returns when element specified by selector satisfies `state` option.
+     * Returns `null` if the element is absent and the state is `hidden` or `detached`.
      *
      * @param selector A selector to query for.
      * @param options
@@ -5993,7 +5995,7 @@ export interface Page {
              */
             timeout?: number;
         },
-    ): Promise<ElementHandle>;
+    ): Promise<ElementHandle | null>;
 
     /**
      * **NOTE** Never wait for timeout in production, use this only for debugging.

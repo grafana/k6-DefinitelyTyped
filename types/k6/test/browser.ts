@@ -910,7 +910,7 @@ async function test() {
     // $ExpectType Promise<string[]>
     page.selectOption(selector, "option");
     // $ExpectType Promise<string[]>
-    page.selectOption(selector, await page.waitForSelector(selector));
+    page.selectOption(selector, (await page.waitForSelector(selector))!);
     // $ExpectType Promise<string[]>
     page.selectOption(selector, { value: "" });
     // $ExpectType Promise<string[]>
@@ -920,7 +920,7 @@ async function test() {
     // $ExpectType Promise<string[]>
     page.selectOption(selector, ["option", "option2"]);
     // $ExpectType Promise<string[]>
-    page.selectOption(selector, [await page.waitForSelector(selector), await page.waitForSelector(selector)]);
+    page.selectOption(selector, [(await page.waitForSelector(selector))!, (await page.waitForSelector(selector))!]);
     // $ExpectType Promise<string[]>
     page.selectOption(selector, [{ value: "" }, { label: "" }]);
     // $ExpectType Promise<string[]>
@@ -1183,21 +1183,29 @@ async function test() {
     // $ExpectType Promise<Response>
     page.waitForEvent("response", { predicate: (res) => res.url().includes("/api"), timeout: 10000 });
 
+    const missingElement = await page.waitForSelector("#absent", { state: "hidden" });
+    // @ts-expect-error The result must be checked for null before use.
+    missingElement.click();
+    if (missingElement !== null) {
+        // $ExpectType Promise<void>
+        missingElement.click();
+    }
+
     // @ts-expect-error
     page.waitForSelector();
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector);
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector, { state: "attached" });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector, { state: "detached" });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector, { state: "visible" });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector, { state: "hidden" });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector, { strict: true });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     page.waitForSelector(selector, { timeout: 10000 });
 
     // @ts-expect-error
@@ -1925,7 +1933,7 @@ async function test() {
     // ElementHandle
     //
 
-    const elementHandle = await page.waitForSelector(selector);
+    const elementHandle = (await page.waitForSelector(selector))!;
 
     // @ts-expect-error
     elementHandle.$();
@@ -2238,14 +2246,18 @@ async function test() {
 
     // @ts-expect-error
     elementHandle.waitForSelector();
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     elementHandle.waitForSelector("div");
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     elementHandle.waitForSelector("div", { timeout: 10000 });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     elementHandle.waitForSelector("div", { state: "attached" });
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     elementHandle.waitForSelector("div", { strict: true });
+    // $ExpectType Promise<ElementHandle | null>
+    elementHandle.waitForSelector("div", { state: "hidden" });
+    // $ExpectType Promise<ElementHandle | null>
+    elementHandle.waitForSelector("div", { state: "detached" });
 
     //
     // Frame
@@ -2756,12 +2768,12 @@ async function test() {
 
     // @ts-expect-error
     frame.waitForSelector();
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     frame.waitForSelector("div");
-    // $ExpectType Promise<ElementHandle>
+    // $ExpectType Promise<ElementHandle | null>
     frame.waitForSelector("div", { timeout: 10000 });
     for (const state of ["attached", "detached", "visible", "hidden"]) {
-        // $ExpectType Promise<ElementHandle>
+        // $ExpectType Promise<ElementHandle | null>
         frame.waitForSelector("div", { state: state as any });
     }
 
