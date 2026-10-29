@@ -6,7 +6,7 @@
         "https://github.com/optimizely/nuclear-js"
     ],
     "dependencies": {
-        "immutable": "^3.7.3"
+        "immutable": "^3.8.4"
     },
     "devDependencies": {
         "@types/nuclear-js": "workspace:."
