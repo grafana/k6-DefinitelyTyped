@@ -7,7 +7,7 @@
     ],
     "dependencies": {
         "@types/prop-types": "*",
-        "immutable": "^3.8.2"
+        "immutable": "^3.8.4"
     },
     "devDependencies": {
         "@types/react-immutable-proptypes": "workspace:."
